@@ -53,6 +53,8 @@
   },
   "afterSign": "scripts/notarize.js",
   "nsis": {
-    "perMachine": false
+    "perMachine": true,
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true
   }
 }

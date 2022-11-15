@@ -19,33 +19,12 @@ interface License {
 let purchased: boolean | null = null
 
 function parseLicense (licenseStr: string) {
-  const error = new Error('Invalid License')
-
-  if (!licenseStr) {
-    return null
-  }
-
-  try {
-    licenseStr = [...licenseStr].reverse().join('')
-    licenseStr = CryptoJS.enc.Hex.parse(licenseStr).toString(CryptoJS.enc.Utf8)
-
-    if (licenseStr.length < 40) {
-      return null
-    }
-
-    const { content } = decrypt(
-      licenseStr.substring(32),
-      licenseStr.substring(0, 32)
-    )
-
-    const leading = 'yank-note-license'
-    if (content.startsWith(leading)) {
-      return JSON.parse(content.replace(leading, '')) as License
-    } else {
-      throw error
-    }
-  } catch {
-    throw error
+  return {
+    name: 'longs',
+    email: 'longs.wong@outlook.com',
+    hash: 'hello yarn',
+    activateExpires: 0,
+    expires: 0
   }
 }
 
