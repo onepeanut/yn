@@ -9,6 +9,9 @@
         <div class="sash-right" @dblclick="resetSize('right', 'aside')" @mousedown="e => initResize('right', 'aside', 130, 700, e)"></div>
       </div>
       <div class="right">
+        <div class="right-before">
+          <slot name="right-before" />
+        </div>
         <div class="content" ref="content">
           <div class="editor" ref="editor" v-show="showEditor">
             <slot name="editor"></slot>
@@ -77,14 +80,21 @@ export default defineComponent({
       return false
     }
 
+    function getContainerSibling (ref: HTMLElement, resizeOrigin: any): HTMLElement | null {
+      return (resizeOrigin.type === 'right'
+        ? ref.nextElementSibling
+        : ref.previousElementSibling) as HTMLElement | null
+    }
+
     function clearResize () {
       if (resizeOrigin) {
         const ref = refs[resizeOrigin.ref].value
         ref.style.filter = ''
         ref.style.pointerEvents = ''
-        const nextContainer = ref.nextElementSibling as HTMLElement
-        if (nextContainer) {
-          nextContainer.style.pointerEvents = ''
+
+        const sibling = getContainerSibling(ref, resizeOrigin)
+        if (sibling) {
+          sibling.style.pointerEvents = ''
         }
 
         resizeOrigin = null
@@ -114,10 +124,10 @@ export default defineComponent({
       }
 
       // prevent pointer events when mouse in container range
-      const nextContainer: HTMLElement = ref.nextElementSibling as HTMLElement
-      if (nextContainer) {
+      const sibling = getContainerSibling(ref, resizeOrigin)
+      if (sibling) {
         ref.style.pointerEvents = 'none'
-        nextContainer.style.pointerEvents = 'none'
+        sibling.style.pointerEvents = 'none'
       }
 
       if (resizeOrigin.type === 'right') {
@@ -259,6 +269,7 @@ export default defineComponent({
   &.presentation {
     .terminal,
     .left,
+    .right-before,
     .editor,
     .header,
     .footer {
@@ -324,7 +335,7 @@ export default defineComponent({
   z-index: 11;
   height: 100%;
   position: absolute;
-  right: 0;
+  right: -2px;
   top: 0;
   width: 4px;
   cursor: ew-resize;
@@ -348,6 +359,10 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.right-before {
+  flex: none;
 }
 
 .content {

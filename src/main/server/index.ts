@@ -7,8 +7,9 @@ import bodyParser from 'koa-body'
 import * as mime from 'mime'
 import request from 'request'
 import { promisify } from 'util'
-import { STATIC_DIR, HOME_DIR, HELP_DIR, USER_PLUGIN_DIR, FLAG_DISABLE_SERVER, APP_NAME, USER_THEME_DIR, RESOURCES_DIR, BUILD_IN_STYLES, USER_EXTENSION_DIR } from '../constant'
+import { STATIC_DIR, HOME_DIR, HELP_DIR, USER_PLUGIN_DIR, FLAG_DISABLE_SERVER, APP_NAME, USER_THEME_DIR, RESOURCES_DIR, BUILD_IN_STYLES, USER_EXTENSION_DIR, USER_DATA } from '../constant'
 import * as file from './file'
+import * as search from './search'
 import run from './run'
 import convert from './convert'
 import plantuml from './plantuml'
@@ -94,7 +95,8 @@ const fileContent = async (ctx: any, next: any) => {
 
       ctx.body = result('ok', 'success', {
         content: content.toString(asBase64 ? 'base64' : undefined),
-        hash: await file.hash(repo, path)
+        hash: await file.hash(repo, path),
+        stat: await file.stat(repo, path)
       })
     } else if (ctx.method === 'POST') {
       const { oldHash, content, asBase64, repo, path } = ctx.request.body
@@ -115,8 +117,10 @@ const fileContent = async (ctx: any, next: any) => {
         )
       }
 
-      const hash: string = await file.write(repo, path, saveContent)
-      ctx.body = result('ok', 'success', hash)
+      ctx.body = result('ok', 'success', {
+        hash: await file.write(repo, path, saveContent),
+        stat: await file.stat(repo, path),
+      })
     } else if (ctx.method === 'DELETE') {
       await file.rm(ctx.query.repo, ctx.query.path)
       ctx.body = result()
@@ -151,6 +155,9 @@ const fileContent = async (ctx: any, next: any) => {
   } else if (ctx.path === '/api/history/comment') {
     const { repo, path, version, msg } = ctx.request.body
     ctx.body = result('ok', 'success', (await file.commentHistoryVersion(repo, path, version, msg)))
+  } else if (ctx.path === '/api/watch-file') {
+    const { repo, path, options } = ctx.request.body
+    ctx.body = await file.watchFile(repo, path, options)
   } else {
     await next()
   }
@@ -175,21 +182,20 @@ const attachment = async (ctx: any, next: any) => {
 }
 
 const searchFile = async (ctx: any, next: any) => {
-  if (ctx.path.startsWith('/api/search')) {
-    const search = ctx.query.search
-    const repo = ctx.query.repo
-
-    ctx.body = result('ok', 'success', await file.search(repo, search))
+  if (ctx.path.startsWith('/api/search') && ctx.method === 'POST') {
+    const query = ctx.request.body.query
+    ctx.body = await search.search(query)
   } else {
     await next()
   }
 }
 
 const plantumlGen = async (ctx: any, next: any) => {
-  if (ctx.path.startsWith('/api/plantuml/png')) {
-    ctx.type = 'image/png'
+  if (ctx.path.startsWith('/api/plantuml')) {
     try {
-      ctx.body = await plantuml(ctx.query.data)
+      const { type, content } = await plantuml(ctx.query.data)
+      ctx.type = type
+      ctx.body = content
       ctx.set('cache-control', 'max-age=86400') // 1 day.
     } catch (error) {
       ctx.body = error
@@ -236,6 +242,35 @@ const tmpFile = async (ctx: any, next: any) => {
         )
       }
 
+      await fs.writeFile(absPath, body)
+      ctx.body = result('ok', 'success', { path: absPath })
+    } else if (ctx.method === 'DELETE') {
+      await fs.unlink(absPath)
+      ctx.body = result('ok', 'success')
+    }
+  } else {
+    await next()
+  }
+}
+
+const userFile = async (ctx: any, next: any) => {
+  if (ctx.path.startsWith('/api/user-file')) {
+    const filePath = ctx.query.name.replace(/\.+/g, '.') // replace multiple dots with one dot
+    const absPath = path.join(USER_DATA, filePath)
+
+    if (ctx.method === 'GET') {
+      ctx.body = await fs.readFile(absPath)
+    } else if (ctx.method === 'POST') {
+      let body: any = ctx.request.body.toString()
+
+      if (ctx.query.asBase64) {
+        body = Buffer.from(
+          body.startsWith('data:') ? body.substring(body.indexOf(',') + 1) : body,
+          'base64'
+        )
+      }
+
+      await fs.ensureFile(absPath)
       await fs.writeFile(absPath, body)
       ctx.body = result('ok', 'success', { path: absPath })
     } else if (ctx.method === 'DELETE') {
@@ -534,6 +569,7 @@ const server = (port = 3000) => {
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, setting))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, choose))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, tmpFile))
+  app.use(async (ctx: any, next: any) => await wrapper(ctx, next, userFile))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, rpc))
 
   // static file

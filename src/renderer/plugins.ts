@@ -10,10 +10,10 @@ import statusBarInsert from '@fe/plugins/status-bar-insert'
 import statusBarTool from '@fe/plugins/status-bar-tool'
 import statusBarHelp from '@fe/plugins/status-bar-help'
 import statusBarDocumentInfo from '@fe/plugins/status-bar-document-info'
-import statusBarPreviewer from '@fe/plugins/status-bar-previewer'
+import statusBarTheme from './plugins/status-bar-theme'
 import statusBarHistory from './plugins/status-bar-history'
 import statusBarPresentation from '@fe/plugins/status-bar-presentation'
-import statusBarControlCenter from '@fe/plugins/status-bar-control-center'
+import controlCenter from '@fe/plugins/control-center'
 import statusBarTerminal from '@fe/plugins/status-bar-terminal'
 import statusBarExtension from './plugins/status-bar-extension'
 import statusBarGet from '@fe/plugins/status-bar-get'
@@ -60,6 +60,7 @@ import imageHostingPicgo from '@fe/plugins/image-hosting-picgo'
 import copyContent from '@fe/plugins/copy-content'
 import sharePreview from '@fe/plugins/share-preview'
 import codeRunners from '@fe/plugins/code-runners'
+import watchFileRefresh from './plugins/watch-file-refresh'
 
 export default [
   customStyles,
@@ -74,11 +75,11 @@ export default [
   statusBarTool,
   statusBarDocumentInfo,
   statusBarHelp,
-  statusBarPreviewer,
+  statusBarTheme,
   statusBarHistory,
   statusBarTerminal,
   statusBarExtension,
-  statusBarControlCenter,
+  controlCenter,
   statusBarPresentation,
   statusBarGet,
   editorPaste,
@@ -124,4 +125,5 @@ export default [
   copyContent,
   sharePreview,
   codeRunners,
+  watchFileRefresh,
 ]

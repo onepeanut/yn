@@ -204,7 +204,20 @@ async function revealLine (startLine: number): Promise<HTMLElement | null> {
   return null
 }
 
-function getContentHtml () {
+function getContentHtml (selected = false) {
+  if (selected && refView.value) {
+    const win = refView.value.ownerDocument.defaultView
+    const selection = win?.getSelection()
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0)
+      const container = document.createElement('div')
+      container.appendChild(range.cloneContents())
+      return container.innerHTML
+    } else {
+      return ''
+    }
+  }
+
   return refView.value?.outerHTML || ''
 }
 
@@ -262,6 +275,7 @@ watch(fileUri, () => {
 
 .markdown-view {
   padding: 40px;
+  padding-top: 20px;
   box-sizing: border-box;
 
   .markdown-body {
@@ -295,7 +309,7 @@ watch(fileUri, () => {
       cursor: zoom-in;
     }
 
-    p > img[only-child] {
+    p > img[auto-center] {
       display: block;
       margin-left: auto;
       margin-right: auto;
@@ -384,7 +398,7 @@ watch(fileUri, () => {
     margin-top: 1em;
 
     a {
-      color: #4c93e2;
+      color: var(--g-color-anchor);
     }
 
     tr {

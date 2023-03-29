@@ -9,8 +9,9 @@ import { defineComponent, nextTick, onBeforeMount, onMounted, ref, toRefs, watch
 import { useStore } from 'vuex'
 import { registerHook, removeHook } from '@fe/core/hook'
 import { registerAction, removeAction } from '@fe/core/action'
-import { isEncrypted, saveDoc, toUri } from '@fe/services/document'
-import { getEditor, getIsDefault, whenEditorReady } from '@fe/services/editor'
+import { isEncrypted, isSameFile, saveDoc, toUri } from '@fe/services/document'
+import { getEditor, getIsDefault, setValue, whenEditorReady } from '@fe/services/editor'
+import { HELP_REPO_NAME } from '@fe/support/args'
 import { getSetting } from '@fe/services/setting'
 import type { Doc } from '@fe/types'
 import MonacoEditor from './MonacoEditor.vue'
@@ -60,7 +61,7 @@ export default defineComponent({
         return
       }
 
-      if (file.repo === '__help__') {
+      if (file.repo === HELP_REPO_NAME) {
         return
       }
 
@@ -92,18 +93,29 @@ export default defineComponent({
       }, autoSave)
     }
 
-    async function changeFile (current?: Doc | null) {
+    async function changeFile (current?: Doc | null, previous?: Doc | null) {
       clearTimer()
 
       if (!editorIsReady) {
         return
       }
 
-      getMonacoEditor().setModel(toUri(current), current?.content ?? '\n')
+      // change content only
+      if (current && previous && isSameFile(current, previous)) {
+        setValue(current.content ?? '\n')
+      } else {
+        getMonacoEditor().createModel(toUri(current), current?.content ?? '\n')
+      }
+
       await nextTick()
       getEditor().updateOptions({
         readOnly: !current || !current.plain
       })
+
+      if (getIsDefault()) {
+        await nextTick()
+        getEditor().focus()
+      }
     }
 
     function resize () {

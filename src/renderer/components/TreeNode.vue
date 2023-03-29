@@ -20,7 +20,7 @@
         @contextmenu.exact.prevent.stop="showContextMenu(itemNode)">
         <div class="item">
           <div class="item-label" draggable="true" @dragstart="onDragStart">
-            {{ itemNode.name === '/' ? currentRepoName : itemNode.name }} <span class="count">({{itemNode.children ? itemNode.children.length : 0}})</span>
+            {{ itemNode.name }} <span class="count">({{itemNode.children ? itemNode.children.length : 0}})</span>
           </div>
           <div class="item-action">
             <svg-icon class="icon" name="folder-plus-solid" @click.exact.stop.prevent="createFolder()" :title="$t('tree.context-menu.create-dir')"></svg-icon>
@@ -52,7 +52,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, h, nextTick, PropType, ref, toRefs, watch } from 'vue'
+import { computed, defineComponent, h, nextTick, PropType, ref, watch } from 'vue'
 import { useStore } from 'vuex'
 import { useContextMenu } from '@fe/support/ui/context-menu'
 import { triggerHook } from '@fe/core/hook'
@@ -62,6 +62,7 @@ import { createDir, createDoc, deleteDoc, duplicateDoc, isMarkdownFile, isMarked
 import { useI18n } from '@fe/services/i18n'
 import { dirname, extname, isBelongTo, join } from '@fe/utils/path'
 import { useToast } from '@fe/support/ui/toast'
+import type { AppState } from '@fe/support/store'
 import SvgIcon from './SvgIcon.vue'
 
 export default defineComponent({
@@ -76,7 +77,7 @@ export default defineComponent({
   setup (props) {
     const { t } = useI18n()
 
-    const store = useStore()
+    const store = useStore<AppState>()
     const toast = useToast()
 
     const refFile = ref<any>(null)
@@ -90,7 +91,7 @@ export default defineComponent({
       localMarked.value = null
     })
 
-    const { currentFile, currentRepo } = toRefs(store.state)
+    const currentFile = computed(() => store.state.currentFile)
 
     async function createFile () {
       await createDoc({ repo: props.item.repo }, props.item)
@@ -285,8 +286,6 @@ export default defineComponent({
       }
     }
 
-    const currentRepoName = computed(() => currentRepo.value?.name ?? '/')
-
     const selected = computed(() => {
       if (!currentFile.value) {
         return false
@@ -331,7 +330,6 @@ export default defineComponent({
       itemNode,
       refFile,
       fileTitle,
-      currentRepoName,
       selected,
       onTreeNodeDblClick,
       marked,
@@ -369,14 +367,27 @@ summary {
   height: 26px;
   overflow: hidden;
   contain: strict;
+  display: block;
 }
 
 summary.folder::-webkit-details-marker,
 summary.folder::marker {
-  flex: none;
-  width: 10px;
-  margin: 0;
-  margin-right: 5px;
+  content: '';
+  display: none;
+}
+
+summary.folder::before {
+  display: inline-block;
+  width: 11px;
+  height: 27px;
+  content: url(data:image/svg+xml;base64,PHN2ZyBhcmlhLWhpZGRlbj0idHJ1ZSIgZm9jdXNhYmxlPSJmYWxzZSIgZGF0YS1wcmVmaXg9ImZhciIgZGF0YS1pY29uPSJjaGV2cm9uLWRvd24iIHJvbGU9ImltZyIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIiB2aWV3Qm94PSIwIDAgNDQ4IDUxMiIgPjxwYXRoIGZpbGw9IiM3YzdmODIiIGQ9Ik00NDEuOSAxNjcuM2wtMTkuOC0xOS44Yy00LjctNC43LTEyLjMtNC43LTE3IDBMMjI0IDMyOC4yIDQyLjkgMTQ3LjVjLTQuNy00LjctMTIuMy00LjctMTcgMEw2LjEgMTY3LjNjLTQuNyA0LjctNC43IDEyLjMgMCAxN2wyMDkuNCAyMDkuNGM0LjcgNC43IDEyLjMgNC43IDE3IDBsMjA5LjQtMjA5LjRjNC43LTQuNyA0LjctMTIuMyAwLTE3eiIgY2xhc3M9IiI+PC9wYXRoPjwvc3ZnPg==);
+  margin-right: 3px;
+  transform: rotate(-90deg);
+  transition: transform 0.1s;
+}
+
+details.name[open] > summary.folder::before {
+  transform: rotate(0);
 }
 
 .folder {

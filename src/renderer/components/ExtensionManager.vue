@@ -164,16 +164,15 @@
                 <div v-if="!iframeLoaded" class="placeholder">{{ $t('loading') }}</div>
               </template>
               <template v-else>
-                <div v-show="iframeLoaded" class="content">
+                <div v-if="contentMap[contentType][currentExtension.id]" class="content">
                   <iframe
-                    v-if="contentMap[contentType][currentExtension.id]"
                     @load="iframeOnload"
                     sandbox="allow-scripts allow-popups allow-same-origin"
                     referrerpolicy="no-referrer"
                     :srcdoc="contentMap[contentType][currentExtension.id] || ''"
                   />
                 </div>
-                <div v-if="!iframeLoaded" class="placeholder">{{ $t('loading') }}</div>
+                <div v-else class="placeholder">{{ $t('loading') }}</div>
               </template>
             </div>
           </template>
@@ -373,6 +372,7 @@ async function fetchExtensions () {
     registryExtensions.value = await extensionManager.getRegistryExtensions(currentRegistry.value)
   } catch (error) {
     logger.error('fetchExtensions', error)
+    useToast().show('warning', t('extension.fetch-registry-failed'))
     registryExtensions.value = []
     throw error
   } finally {
@@ -400,7 +400,7 @@ async function fetchContent (type: 'readme' | 'changelog', extension: Extension)
     contentMap.value[type][extension.id] = `
       <link rel="stylesheet" href="${location.origin}/github.css">
       <div style="padding: 12px" class="markdown-body">
-        ${markdownIt.render(markdown)}
+        ${markdownIt.render(markdown.replaceAll(/<small>([^<]+)<\/small>/g, '**$1**'))}
       </div>
     `
   } catch (error: any) {
@@ -844,7 +844,7 @@ onUnmounted(() => {
       padding: 12px;
 
       .title {
-        align-items: flex-end;
+        align-items: center;
         justify-content: start;
         overflow: hidden;
         margin-top: -6px;

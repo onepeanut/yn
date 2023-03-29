@@ -200,7 +200,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .editor-wrapper {
-  width: 700px;
+  width: 800px;
   background: var(--g-color-backdrop);
   backdrop-filter: var(--g-backdrop-filter);
   margin: auto;
@@ -306,7 +306,7 @@ export default defineComponent({
   }
 
   ::v-deep(a) {
-    color: #4c93e2;
+    color: var(-g-color-anchor);
   }
 }
 

@@ -1,6 +1,7 @@
 <template>
   <Tabs
     ref="refTabs"
+    class="file-tabs"
     :list="fileTabs"
     :value="current"
     :filter-btn-title="filterBtnTitle"
@@ -23,10 +24,10 @@ import { registerAction, removeAction } from '@fe/core/action'
 import { ensureCurrentFileSaved, isEncrypted, isMarkdownFile, isSameFile, isSubOrSameFile, switchDoc, toUri } from '@fe/services/document'
 import type { AppState } from '@fe/support/store'
 import { useI18n } from '@fe/services/i18n'
+import { FileTabs } from '@fe/services/workbench'
 import { getSetting } from '@fe/services/setting'
 import { isElectron } from '@fe/support/env'
 import Tabs from './Tabs.vue'
-import { getTabsActionBtns } from '@fe/services/layout'
 
 const blankUri = toUri(null)
 
@@ -46,6 +47,8 @@ export default defineComponent({
     const showFilterBtnShortcuts = [Shift, Alt, 'p']
     const filterBtnTitle = computed(() => $t.value('tabs.search-tabs') + ' ' + getKeysLabel(showFilterBtnShortcuts))
     const actionBtns = ref<Components.Tabs.ActionBtn[]>([])
+
+    const welcomeShortcuts = isElectron ? [CtrlCmd, 'n'] : [CtrlCmd, Alt, 'n']
 
     function copyDoc (file: Doc | null): Doc | null {
       return file ? {
@@ -85,8 +88,13 @@ export default defineComponent({
 
       // no this tab, add new one.
       if (!tab) {
-        // remove temporary tab and add new one.
-        setTabs(tabs.value.filter(x => !x.temporary).concat([item]))
+        if (item.payload.file) {
+          // remove temporary tab and add new one.
+          setTabs(tabs.value.filter(x => !x.temporary).concat([item]))
+        } else {
+          // welcome tab
+          setTabs(tabs.value.concat([item]))
+        }
       }
 
       current.value = item.key
@@ -178,7 +186,22 @@ export default defineComponent({
     }
 
     function refreshActionBtns () {
-      actionBtns.value = getTabsActionBtns()
+      const arr = [...FileTabs.getActionBtns()]
+
+      if (currentFile.value) {
+        arr.unshift({
+          icon: 'plus-regular',
+          type: 'normal',
+          title: t('tabs.new-tab') + ' ' + getKeysLabel(welcomeShortcuts),
+          onClick () {
+            switchDoc(null)
+          },
+          order: -600,
+          style: 'order: -600;'
+        })
+      }
+
+      actionBtns.value = arr
     }
 
     onBeforeMount(() => {
@@ -221,6 +244,14 @@ export default defineComponent({
       })
 
       registerAction({
+        name: 'file-tabs.show-welcome',
+        handler () {
+          switchDoc(null)
+        },
+        keys: welcomeShortcuts
+      })
+
+      registerAction({
         name: 'file-tabs.refresh-action-btns',
         handler: refreshActionBtns,
       })
@@ -237,6 +268,7 @@ export default defineComponent({
       removeAction('file-tabs.close-current')
       removeAction('file-tabs.search-tabs')
       removeAction('file-tabs.refresh-action-btns')
+      removeAction('file-tabs.show-welcome')
     })
 
     watch(currentFile, file => {

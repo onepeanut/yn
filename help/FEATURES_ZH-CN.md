@@ -15,6 +15,12 @@ define:
 
 ## 应用数据
 
+`<home>` 为当前操作系统的用户主目录，例如：
+
+1. Windows: `C:\Users\<username>`
+1. Linux: `/home/<username>`
+1. macOS: `/Users/<username>`
+
 应用相关的数据目录存放在 `<home>/yank-note` 下面，点击托盘菜单“打开主目录”即可查看
 
 目录说明：
@@ -31,6 +37,7 @@ define:
 1. 插件 `<home>/yank-note/plugins`
 1. 主题 `<home>/yank-note/themes`
 1. 扩展 `<home>/yank-note/extensions`
+1. 其他用户数据 `<home>/yank-note/data`
 
 ## TOC 生成
 
@@ -366,8 +373,8 @@ Js 代码块第一行包含以 `--echarts--` 字符串会被解析成 ECharts �
 
 ```js
 // --echarts--
-function (chart) {
-chart.setOption({
+
+const option = {
     // backgroundColor: '#2c343c',
 
     title: {
@@ -438,8 +445,9 @@ chart.setOption({
             }
         }
     ]
-}, true)
 }
+
+chart.setOption(option, true)
 ```
 
 ## Draw.io 图形
@@ -597,6 +605,10 @@ Yank Note 允许你在页面中嵌入宏，用以动态地替换文档。
 ### 文本替换
 
 Front Matter 中的 `define` 字段可以定义一些文本替换映射。支持在另一个文件定义，支持宏表达式。具体可参考本文件顶部 Front Matter 部分。
+
+::: tip
+你还可以在设置中配置 *<a href="javascript: ctx.setting.showSettingPanel('macros')">全局宏替换</a>* ，这样所有文档都可以使用。不过，你仍然需要在 Front Matter 中定义 `enableMacro: true`。
+:::
 
 - 应用名: --APP_NAME--
 - 应用版本: --APP_VERSION--

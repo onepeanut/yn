@@ -1,9 +1,9 @@
 import { slugify } from 'transliteration'
 import filenamify from 'filenamify/browser'
-import type { Doc } from '@fe/types'
+import type { Doc, FindInRepositoryQuery } from '@fe/types'
 import * as api from '@fe/support/api'
 import { getSetting } from './setting'
-import { FLAG_DEMO } from '@fe/support/args'
+import { FLAG_DEMO, HELP_REPO_NAME } from '@fe/support/args'
 import { binMd5, quote, fileToBase64URL, getLogger, removeQuery } from '@fe/utils'
 import { basename, resolve, extname, dirname, relative, isBelongTo } from '@fe/utils/path'
 import { dayjs } from '@fe/context/lib'
@@ -11,6 +11,7 @@ import { useModal } from '@fe/support/ui/modal'
 import { useToast } from '@fe/support/ui/toast'
 import { isElectron, isWindows } from '@fe/support/env'
 import { t } from './i18n'
+import { getActionHandler } from '@fe/core/action'
 
 const logger = getLogger('service-base')
 
@@ -29,7 +30,7 @@ export function getAttachmentURL (doc: Doc, opts: { origin: boolean } = { origin
   const repo = doc.repo
   const filePath = doc.path
 
-  const uri = repo === '__help__'
+  const uri = repo === HELP_REPO_NAME
     ? `/api/help/file?path=${encodeURIComponent(filePath)}`
     : `/api/attachment/${encodeURIComponent(fileName)}?repo=${repo}&path=${encodeURIComponent(filePath)}`
 
@@ -211,4 +212,12 @@ export async function writeToClipboard (type: string, value: any) {
 export async function getServerTimestamp () {
   const date = (await api.proxyRequest('https://www.baidu.com/')).headers.get('x-origin-date')
   return dayjs(date || undefined).valueOf()
+}
+
+/**
+ * Find in current repository.
+ * @param query
+ */
+export function findInRepository (query?: FindInRepositoryQuery) {
+  getActionHandler('base.find-in-repository')(query)
 }

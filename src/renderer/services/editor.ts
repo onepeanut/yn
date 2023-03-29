@@ -109,11 +109,11 @@ export function getEditor () {
  * @returns dispose function
  */
 export function highlightLine (line: number | [number, number], reveal: boolean, duration: number): Promise<void>
-export function highlightLine (line: number | [number, number], reveal?: boolean, duration?: number): (() => string[]) | Promise<void>
-export function highlightLine (line: number | [number, number], reveal?: boolean, duration?: number): (() => string[]) | Promise<void> {
+export function highlightLine (line: number | [number, number], reveal?: boolean, duration?: number): (() => void) | Promise<void>
+export function highlightLine (line: number | [number, number], reveal?: boolean, duration?: number): (() => void) | Promise<void> {
   const lines = Array.isArray(line) ? line : [line, line]
 
-  const decorations = getEditor().deltaDecorations([], [
+  const decorations = getEditor().createDecorationsCollection([
     {
       range: new (getMonaco().Range)(lines[0], 0, lines[1], 999),
       options: {
@@ -127,7 +127,7 @@ export function highlightLine (line: number | [number, number], reveal?: boolean
     getEditor().revealLineNearTop(lines[0])
   }
 
-  const dispose = () => getEditor().deltaDecorations(decorations, [])
+  const dispose = () => decorations.clear()
 
   if (duration) {
     return sleep(duration).then(() => {
@@ -291,6 +291,8 @@ export function setValue (text: string) {
   const maxLine = model!.getLineCount()
   const endLineLength = model!.getLineLength(maxLine)
 
+  const viewState = editor.saveViewState()
+
   editor.executeEdits('', [
     {
       range: new (getMonaco().Range)(1, 1, maxLine, endLineLength + 1),
@@ -298,7 +300,9 @@ export function setValue (text: string) {
       forceMoveMarkers: true
     }
   ])
-  getEditor().focus()
+
+  editor.restoreViewState(viewState)
+  editor.focus()
 }
 
 /**
@@ -450,6 +454,18 @@ registerHook('EDITOR_CURRENT_EDITOR_CHANGE', ({ current }) => {
 })
 
 registerHook('MONACO_BEFORE_INIT', ({ monaco }) => {
+  // Quick fix: https://github.com/microsoft/monaco-editor/issues/2962
+  monaco.languages.register({ id: 'vs.editor.nullLanguage' })
+  monaco.languages.setLanguageConfiguration('vs.editor.nullLanguage', {})
+
+  monaco.languages.getLanguages().forEach(function (lang) {
+    if (lang.id === 'javascript') {
+      lang.aliases?.push('node')
+    } else if (lang.id === 'shell') {
+      lang.aliases?.push('bash')
+    }
+  })
+
   monaco.editor.defineTheme('vs', {
     base: 'vs',
     inherit: true,

@@ -1,4 +1,5 @@
-import { shell } from 'electron'
+import { app, shell } from 'electron'
+import chokidar from 'chokidar'
 import orderBy from 'lodash/orderBy'
 import * as fs from 'fs-extra'
 import * as path from 'path'
@@ -6,7 +7,8 @@ import * as crypto from 'crypto'
 import * as yargs from 'yargs'
 import AdmZip from 'adm-zip'
 import dayjs from 'dayjs'
-import { DEFAULT_EXCLUDE_REGEX, ENCRYPTED_MARKDOWN_FILE_EXT, isEncryptedMarkdownFile, isMarkdownFile, MARKDOWN_FILE_EXT } from '../../share/misc'
+import { DEFAULT_EXCLUDE_REGEX, DOC_HISTORY_MAX_CONTENT_LENGTH, ENCRYPTED_MARKDOWN_FILE_EXT, isEncryptedMarkdownFile, isMarkdownFile, MARKDOWN_FILE_EXT } from '../../share/misc'
+import { createStreamResponse } from '../helper'
 import { HISTORY_DIR } from '../constant'
 import config from '../config'
 import repository from './repository'
@@ -135,6 +137,18 @@ export function read (repo: string, p: string): Promise<Buffer> {
   return withRepo(repo, (_, targetPath) => fs.readFile(targetPath), p)
 }
 
+export function stat (repo: string, p: string) {
+  return withRepo(repo, async (_, targetPath) => {
+    const stat = await fs.stat(targetPath)
+
+    return {
+      birthtime: stat.birthtimeMs,
+      mtime: stat.mtimeMs,
+      size: stat.size,
+    }
+  }, p)
+}
+
 export function write (repo: string, p: string, content: any): Promise<string> {
   if (readonly) throw new Error('Readonly')
 
@@ -149,7 +163,7 @@ export function write (repo: string, p: string, content: any): Promise<string> {
     await fs.writeFile(filePath, content)
 
     if (isMarkdownFile(filePath) && typeof content === 'string') {
-      if (content.length > 100 * 1024) {
+      if (content.length > DOC_HISTORY_MAX_CONTENT_LENGTH) {
         console.log('skip write history for large file', filePath, content.length)
       } else {
         setTimeout(() => writeHistory(filePath, content), 0)
@@ -436,5 +450,41 @@ export async function commentHistoryVersion (repo: string, p: string, version: s
     entry.comment = msg
 
     writeHistoryZip(zip, historyFilePath)
+  }, p)
+}
+
+export async function watchFile (repo: string, p: string, options: chokidar.WatchOptions) {
+  return withRepo(repo, async (_, filePath) => {
+    const watcher = chokidar.watch(filePath, options)
+    const { response, enqueue, close } = createStreamResponse()
+
+    watcher.on('all', (eventName, path, stats) => {
+      enqueue('result', { eventName, path, stats })
+    })
+
+    const _close = () => {
+      close()
+      watcher.close()
+      app.off('quit', _close)
+    }
+
+    app.on('quit', _close)
+
+    watcher.on('error', err => {
+      console.error('watchFile', filePath, 'error', err)
+      enqueue('error', err)
+    })
+
+    response.once('close', () => {
+      console.log('watchFile', filePath, 'close')
+      _close()
+    })
+
+    response.on('error', (err) => {
+      console.warn('watchFile', filePath, 'error', err)
+      _close()
+    })
+
+    return response
   }, p)
 }

@@ -15,6 +15,12 @@ English | [中文](./FEATURES_ZH-CN.md)
 
 ## Data Storage
 
+`<home>` is the directory of the current user. Example:
+
+1. Windows: `C:\Users\<username>`
+1. Linux: `/home/<username>`
+1. Mac: `/Users/<username>`
+
 The application generated data is stored in `<home>/yank-note` dir, click the "Open Main Dir" menu in the tray to view them.
 
 Directory description
@@ -31,6 +37,7 @@ Directory description
 1. plug-ins `<home>/yank-note/plugins`
 1. themes `<home>/yank-note/themes`
 1. extensions `<home>/yank-note/extensions`
+1. other user data `<home>/yank-note/data`
 
 ## TOC Generation
 
@@ -367,8 +374,8 @@ The string containing `--echarts--` in the first line of the Js code block will 
 
 ```js
 // --echarts--
-function (chart) {
-chart.setOption({
+
+const option = {
     // backgroundColor: '#2c343c',
 
     title: {
@@ -439,8 +446,9 @@ chart.setOption({
             }
         }
     ]
-}, true)
 }
+
+chart.setOption(option, true)
 ```
 
 ## Draw.io
@@ -597,6 +605,10 @@ Using macro replacement may lead to inaccurate correspondence between source cod
 ### Definition
 
 The `define` field can define some text replacement mappings. Supports definition in another file, supports macro expressions. For details, please refer to the Front Matter at the top of this document.
+
+::: tip
+You can define global macros in the <a href="javascript: ctx.setting.showSettingPanel('macros')">settings</a>. But you still need to define `enableMacro: true` in Front Matter.
+:::
 
 - App Name: --APP_NAME--
 - App Version: --APP_VERSION--

@@ -1,6 +1,6 @@
 # Yank Note
 
-A **hackable** markdown note application for programmers **[Download](https://github.com/purocean/yn/releases)** | **[Try it Online >>>](https://yank-note.vercel.app/)**
+A **highly extensible** Markdown editor, designed for productivity. **[Download](https://github.com/purocean/yn/releases)** | **[Try it Online >>>](https://demo.yank-note.com/)**
 
 [![Download](./help/mas_en.svg?.inline)](https://apps.apple.com/cn/app/yank-note/id1551528618) [Not recommended](https://github.com/purocean/yn/issues/65#issuecomment-1065799677)
 
@@ -76,20 +76,16 @@ For more information on how to use the following functions, please see [characte
 
 ## Changelogs
 
-### [v3.43.0](https://github.com/purocean/yn/releases/tag/v3.43.0) 2022-11-14
+### [v3.51.0](https://github.com/purocean/yn/releases/tag/v3.51.0) 2023-03-28
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-win-x64-3.43.0.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-mac-arm64-3.43.0.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-mac-x64-3.43.0.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-linux-x86_64-3.43.0.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-linux-amd64-3.43.0.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-win-x64-3.51.0.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-mac-arm64-3.51.0.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-mac-x64-3.51.0.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-linux-x86_64-3.51.0.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-linux-amd64-3.51.0.deb)
 
-1. feat: add file list sorting function
-2. upd: Fine-tune UI and UX
-3. fix: fix the case adaptation problem of anchor jump
-4. fix: fix the problem that the image previewer cannot be dragged
-5. feat(plugin): the context menu item supports the selected state
-6. feat(plugin): support custom editor Tabs action button
-7. feat(plugin): Optimize custom editor related API
-8. feat(plugin): support loading `.mjs` scripts
-9. feat(plugin): add `ctx.base.getAttachmentURL` method
-10. feat(plugin): add `ctx.tree.revealCurrentNode` method
+1. feat: optimize the "Quick Open" panel interaction
+2. feat: increase rendering settings
+3. feat: add disable "Emoji" setting
+4. fix: fix the conflict between `markdown-it-sub` and `markdown-it-sup` plugins and HTML parsing
+5. feat(plugin): add user file interface
+6. feat(plugin): modal confirm supports defining dialog box width
 
 [More release notes](https://github.com/purocean/yn/releases)
 

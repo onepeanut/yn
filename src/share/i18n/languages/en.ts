@@ -4,7 +4,7 @@ const data = {
   'app-name': 'Yank Note',
   'about': 'About',
   'feedback': 'Feedback',
-  'slogan': 'A Hackable Markdown editor for developers',
+  'slogan': 'A highly extensible Markdown editor, designed for productivity.',
   'cancel': 'Cancel',
   'undo': 'Undo',
   'ok': 'OK',
@@ -34,7 +34,6 @@ const data = {
   'install-extension-tips': 'Please install and enable the "%s" extension first',
   'not-support-mas': 'Yank Note downloaded from the Mac Apple Store does not support this extension.',
   'learn-more': 'Learn More',
-  'previewer': 'Previewer',
   'default': 'Default',
   'print': 'Print',
   'premium': {
@@ -46,11 +45,11 @@ const data = {
       'intro': 'Intro',
       'current-plan': 'Current Plan',
       'included': 'Included',
-      'desc': 'Yank Note is open-source, I\'ve been constantly updating it since 2018. It consumes my energy and money (such as the annual Apple developer account subscription). Now a paid premium version is available. If you need advanced features or want to support my development, you can buy a license.',
+      'desc': 'Yank Note is open-source, I\'ve been constantly developing it since 2018. It takes my energy and money. Now a premium version is available. If you want to support my development or need advanced features, you can buy a license.',
       'free-desc': 'For most users',
       'premium-desc': 'More features',
-      'free-list': 'Basic Editing\nGraphic Embedding\nRun Code Snippet\nHTML Applets\nEncryption\nTerminal Integration\nOpenAI Integration\nDocument History\nExtension',
-      'premium-list': 'Basic Editing\nGraphic Embedding\nRun Code Snippet\nHTML Applets\nEncryption\nTerminal Integration\nOpenAI Integration\nDocument History (Advanced)\nExtension (More)\nMacro Replacement\nDark Mode',
+      'free-list': 'Basic Editing\nGraphic Embedding\nRun Code Snippet\nHTML Applets\nEncryption\nTerminal Integration\nDocument History\nExtension',
+      'premium-list': 'Basic Editing\nGraphic Embedding\nRun Code Snippet\nHTML Applets\nEncryption\nTerminal Integration\nDocument History (Advanced)\nExtension (More)\nMacro Replacement\nDark Mode',
     },
     'buy': {
       'buy': 'Buy',
@@ -117,6 +116,7 @@ const data = {
         'buttons': {
           'download': 'Download',
           'view-changes': 'View Changes',
+          'download-and-view-changes': 'Download and View Changes',
           'cancel': 'Cancel',
           'ignore': 'Don\'t Ask Again'
         }
@@ -258,6 +258,12 @@ const data = {
     'extension': {
       'extension-manager': 'Extension Manager',
     },
+    'theme': {
+      'tips': 'Theme: %s',
+      'dark': 'Dark',
+      'light': 'Light',
+      'system': 'OS Default',
+    },
   },
   'view': {
     'outline': 'Outline',
@@ -284,6 +290,7 @@ const data = {
       'create-in-cd': 'New File',
       'copy-name': 'Copy Name',
       'copy-path': 'Copy Path',
+      'find-in-folder': 'Find in Folder',
     },
     'toast': {
       'moved': '[%s] Moved to [%s]',
@@ -306,6 +313,7 @@ const data = {
     'pin': 'Pin',
     'unpin': 'Unpin',
     'search-tabs': 'Search tabs',
+    'new-tab': 'New Tab',
   },
   'export-panel': {
     'export': 'Export',
@@ -339,8 +347,10 @@ const data = {
       'repos': 'Repositories',
       'appearance': 'Appearance',
       'editor': 'Editor',
+      'render': 'Render',
       'image': 'Image',
       'proxy': 'Proxy',
+      'macros': 'Macro',
       'other': 'Other',
     },
     'schema': {
@@ -361,6 +371,16 @@ const data = {
         'line-numbers': 'Line Numbers',
         'enable-preview': 'Enable Preview - Open new files using temporary tabs, double click the tab to change',
         'font-family': 'Font Family',
+        'complete-emoji': 'Complete Emoji - Input : to display emoji list',
+      },
+      'render': {
+        'md-html': 'Enable HTML',
+        'md-breaks': 'Convert \\n to &lt;br&gt;',
+        'md-linkify': 'Auto convert URL-like text to links',
+        'md-typographer': 'Enable some language-neutral replacement + quotes beautification',
+        'md-sup': 'Enable sup syntax: 29^th^',
+        'md-sub': 'Enable sub syntax: H~2~O',
+        'md-emoji': 'Enable emoji syntax: :smile:',
       },
       'theme': 'Theme',
       'language': 'Language',
@@ -380,6 +400,9 @@ const data = {
       'doc-history': {
         'number-limit': 'Versions Retained',
       },
+      'search': {
+        'number-limit': 'Search Max Results',
+      },
       'server': {
         'host': 'Listen Host',
         'port': 'Listen Port',
@@ -395,13 +418,19 @@ const data = {
         'bypass-list': 'Bypass List',
         'pac-url': 'PAC URL',
       },
+      'macros': {
+        'macros': 'Macros',
+        'match': 'Match',
+        'replace': 'Replace',
+        'match-placeholder': '%foo%',
+        'replace-placeholder': '%foo% -> BAR',
+      },
     }
   },
   'quick-open': {
     'input-placeholder': 'Type characters...',
     'empty': 'Empty',
     'files': 'Files',
-    'search': 'Search',
     'marked': 'Marked',
   },
   'editor': {
@@ -417,6 +446,11 @@ const data = {
       'reveal-line-in-preview': 'Reveal Line in Preview',
     },
     'switch-editor': 'Switch Editor',
+    'default-editor': 'Default Editor',
+  },
+  'previewer': {
+    'default-previewer': 'Default Previewer',
+    'switch-previewer': 'Switch Previewer',
   },
   'picgo': {
     'setting': {
@@ -524,6 +558,10 @@ const data = {
       'title': 'Mark Version [%s]',
       'hint': 'Input some message (optional)',
     },
+    'content-too-long-alert': {
+      'title': 'Warning',
+      'content': 'For performance reasons, documents with more than [%s] characters will not store history. The current document length is [%s] characters.',
+    },
   },
   'copy-content': {
     'options': 'Options: ',
@@ -535,6 +573,8 @@ const data = {
     'highlight-code': 'Highlight Code',
     'rt': 'Rich Text',
     'complete': 'Conversion completed, click OK to copy',
+    'copy-tips': 'If you need to copy part of the content, you need select it in the preview area first.',
+    'copy-tips-selected': 'Copy selected content, %s characters.',
   },
   'share-preview': {
     'expire': 'Expire',
@@ -582,12 +622,30 @@ const data = {
     'auto-upgrade': 'Auto Upgrade',
     'unknown-origin-tips': 'Using extensions from unknown sources can be risky, still want to enable?',
     'extensions-auto-upgraded': '%s extensions have been upgraded',
+    'fetch-registry-failed': 'Fetch registry failed, please switch to another registry or try again later',
   },
   'get-started': {
     'get-started': 'Get Started',
     'start': 'Start',
     'help': 'Help',
     'recent': 'Recent',
+  },
+  'search-panel': {
+    'search-files': 'Search Files',
+    'placeholder-search': 'Search',
+    'for-history': '(⇅ for history)',
+    'files-to-include': 'Files to include',
+    'files-to-exclude': 'Files to exclude',
+    'match-case': 'Match Case',
+    'match-whole-word': 'Match Whole Word',
+    'use-regex': 'Use Regular Expression',
+    'expand-all': 'Expand All',
+    'collapse-all': 'Collapse All',
+  },
+  'file-changed-alert': {
+    'title': 'File Changed',
+    'content': 'The file has been changed on disk, do you want to reload it?',
+    'reload': 'Reload',
   },
 }
 

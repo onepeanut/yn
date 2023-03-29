@@ -1,4 +1,5 @@
 import type { Language } from '@share/i18n'
+import type MarkdownIt from 'markdown-it'
 import type Token from 'markdown-it/lib/token'
 import type * as Monaco from 'monaco-editor'
 
@@ -9,6 +10,12 @@ export interface PathItem {
 
 export interface FileItem extends PathItem { name: string }
 
+export interface FileStat {
+  mtime: number,
+  birthtime: number,
+  size: number,
+}
+
 export interface Doc extends PathItem {
   type: 'file' | 'dir';
   name: string;
@@ -16,6 +23,7 @@ export interface Doc extends PathItem {
   title?: string;
   passwordHash?: string;
   contentHash?: string;
+  stat?: FileStat,
   status?: 'loaded' | 'save-failed' | 'saved';
   absolutePath?: string,
   plain?: boolean;
@@ -33,6 +41,7 @@ export namespace Components {
       content?: string;
       okText?: string;
       cancelText?: string;
+      modalWidth?: string;
     }
 
     export interface ConfirmModalParams extends BaseParams {
@@ -49,7 +58,6 @@ export namespace Components {
       type?: string;
       value?: string;
       hint?: string;
-      modalWidth?: string;
       readonly?: boolean;
       select?: boolean | [number, number, 'forward' | 'backward' | 'none'];
     }
@@ -85,11 +93,18 @@ export namespace Components {
       temporary?: boolean;
     }
 
-    export interface ActionBtn {
+    export type ActionBtn = {
+      type: 'normal',
+      key?: string | number,
       icon: string,
       title: string,
+      order?: number,
+      hidden?: boolean,
+      style?: string,
       onClick: (e: MouseEvent) => void,
     }
+    | { type: 'separator', order?: number, hidden?: boolean }
+    | { type: 'custom', key?: string | number, hidden?: boolean, component: any, order?: number }
   }
 
   export namespace FileTabs {
@@ -127,6 +142,29 @@ export namespace Components {
       list: Item[];
     }
   }
+
+  export namespace ControlCenter {
+    export type Item = {
+      type: 'btn',
+      flat?: boolean,
+      checked?: boolean,
+      disabled?: boolean,
+      icon: string,
+      title: string,
+      onClick?: () => void,
+      showInActionBar?: boolean,
+    }
+
+    export type SchemaItem = { items: Item[] }
+    export type Schema = {
+      [category: string]: SchemaItem | undefined
+    } & {
+      switch: SchemaItem,
+      navigation: SchemaItem,
+    }
+
+    export type SchemaTapper = (schema: Schema) => void
+  }
 }
 
 export type FileSort = { by: 'mtime' | 'birthtime' | 'name' | 'serial', order: 'asc' | 'desc' }
@@ -134,7 +172,7 @@ export type FileSort = { by: 'mtime' | 'birthtime' | 'name' | 'serial', order: '
 export type ThemeName = 'system' | 'dark' | 'light'
 export type LanguageName = 'system' | Language
 export type ExportType = 'print' | 'pdf' | 'docx' | 'html' | 'rst' | 'adoc'
-export type SettingGroup = 'repos' | 'appearance' | 'editor' | 'image' | 'proxy' | 'other'
+export type SettingGroup = 'repos' | 'appearance' | 'editor' | 'image' | 'proxy' | 'other' | 'macros' | 'render'
 export type RegistryHostname = 'registry.npmjs.org' | 'registry.npmmirror.com'
 
 export type PrintOpts = {
@@ -166,6 +204,14 @@ export type RenderEnv = {
 
 export type ExtensionCompatible = { value: boolean, reason: string }
 export type ExtensionLoadStatus = { version?: string, themes: boolean, plugin: boolean, style: boolean, activationTime: number }
+export type FindInRepositoryQuery = {
+  pattern?: string,
+  caseSensitive?: boolean,
+  wholeWord?: boolean,
+  regExp?: boolean,
+  include?: string,
+  exclude?: string,
+}
 
 export interface Extension {
   id: string;
@@ -196,6 +242,7 @@ export interface Extension {
 
 export interface BuildInSettings {
   'repos': Repo[],
+  'macros': { match: string, replace: string }[],
   'theme': ThemeName,
   'language': LanguageName,
   'auto-save': number,
@@ -211,6 +258,14 @@ export interface BuildInSettings {
   'editor.line-numbers': 'on' | 'off' | 'relative' | 'interval',
   'editor.enable-preview': boolean,
   'editor.font-family': string,
+  'editor.complete-emoji': boolean,
+  'render.md-html': boolean,
+  'render.md-breaks': boolean,
+  'render.md-linkify': boolean,
+  'render.md-typographer': boolean,
+  'render.md-emoji': boolean,
+  'render.md-sub': boolean,
+  'render.md-sup': boolean,
   'assets.path-type': 'relative' | 'absolute' | 'auto',
   'plugin.image-hosting-picgo.server-url': string,
   'plugin.image-hosting-picgo.enable-paste-image': boolean,
@@ -218,6 +273,7 @@ export interface BuildInSettings {
   'mark': FileItem[],
   'updater.source': 'github.com' | 'ghproxy.com',
   'doc-history.number-limit': number,
+  'search.number-limit': number,
   'server.host': string,
   'server.port': number,
   'tree.exclude': string,
@@ -236,7 +292,7 @@ export type BuildInActions = {
   'view.render': () => void,
   'view.refresh': () => void,
   'view.reveal-line': (startLine: number) => Promise<HTMLElement | null>,
-  'view.get-content-html': () => string,
+  'view.get-content-html': (selected?: boolean) => string,
   'view.get-view-dom': () => HTMLElement | null,
   'view.get-render-env': () => RenderEnv | null,
   'view.enter-presentation': () => void,
@@ -248,7 +304,6 @@ export type BuildInActions = {
   'layout.toggle-side': (visible?: boolean) => void,
   'layout.toggle-xterm': (visible?: boolean) => void,
   'layout.toggle-editor': (visible?: boolean) => void,
-  'layout.toggle-outline': (visible?: boolean) => void,
   'control-center.toggle': (visible?: boolean) => void,
   'status-bar.refresh-menu': () => void,
   'control-center.refresh': () => void,
@@ -279,6 +334,8 @@ export type BuildInActions = {
   'plugin.electron-zoom.zoom-out': () => void,
   'plugin.electron-zoom.zoom-reset': () => void,
   'premium.show': () => void,
+  'base.find-in-repository': (query?: FindInRepositoryQuery) => void,
+  'workbench.toggle-outline': (visible?: boolean) => void,
 }
 
 export type BuildInActionName = keyof BuildInActions
@@ -292,7 +349,7 @@ export type BuildInHookTypes = {
   ACTION_AFTER_RUN: { name: string }
   THEME_CHANGE: { name: ThemeName },
   EDITOR_PASTE_IMAGE: { file: File },
-  MARKDOWN_BEFORE_RENDER: { src: string, env: RenderEnv }
+  MARKDOWN_BEFORE_RENDER: { src: string, env: RenderEnv, md: MarkdownIt },
   VIEW_ELEMENT_CLICK: { e: MouseEvent, view: HTMLElement },
   VIEW_ELEMENT_DBCLICK: { e: MouseEvent, view: HTMLElement },
   VIEW_KEY_DOWN: { e: KeyboardEvent, view: HTMLElement },
@@ -316,7 +373,8 @@ export type BuildInHookTypes = {
       uploadLocalImage?: boolean,
       highlightCode?: boolean,
       preferPng?: boolean,
-      nodeProcessor?: (node: HTMLElement) => void
+      onlySelected?: boolean,
+      nodeProcessor?: (node: HTMLElement) => void,
     }
   },
   TREE_NODE_SELECT: { node: Components.Tree.Node },
@@ -342,7 +400,7 @@ export type BuildInHookTypes = {
   SETTING_PANEL_BEFORE_SHOW: {},
   SETTING_CHANGED: { changedKeys: (keyof BuildInSettings)[], oldSettings: BuildInSettings, settings: BuildInSettings }
   SETTING_FETCHED: { settings: BuildInSettings, oldSettings: BuildInSettings },
-  SETTING_BEFORE_WRITE: { settings: BuildInSettings },
+  SETTING_BEFORE_WRITE: { settings: Partial<BuildInSettings> },
   EXTENSION_READY: { extensions: Extension[] },
   CODE_RUNNER_CHANGE: { type: 'register' | 'remove' },
   PLUGIN_HOOK: {
@@ -354,6 +412,7 @@ export type BuildInHookTypes = {
 
 export type Previewer = {
   name: string,
+  displayName?: string,
   component: any,
 }
 

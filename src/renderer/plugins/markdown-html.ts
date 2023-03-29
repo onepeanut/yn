@@ -20,6 +20,7 @@ const comment = '(?:<!(--)|(--)>)'
 
 const HTML_TAG_RE = new RegExp('^(?:' + comment + '|' + openTag + '|' + closeTag + ')')
 const HTML_SELF_CLOSE_TAG_RE = new RegExp('^' + selfCloseTag, 'i')
+const INVALID_HTML_TAG_NAME_RE = /script|style/i
 
 function isLetter (ch: number) {
   const lc = ch | 0x20 // to lower case
@@ -43,7 +44,13 @@ function setAttrs (token: Token, content: string) {
   }
 }
 
-function htmlInline (state: StateInline): boolean {
+function validateTagName (name: string) {
+  return !INVALID_HTML_TAG_NAME_RE.test(name)
+}
+
+function htmlInline (state: StateInline, silent = false): boolean {
+  if (silent) { return false }
+
   const pos = state.pos
 
   if (!state.md.options.html) { return false }
@@ -87,14 +94,26 @@ function htmlInline (state: StateInline): boolean {
   if (content.startsWith('</') || content.startsWith('-->')) {
     const prevHtmlTag = prevHtmlTags.pop()
     if (prevHtmlTags && prevHtmlTag === tag) {
+      if (!validateTagName(tag)) {
+        return false
+      }
+
       token = state.push('html_close', tag, -1)
     } else {
       console.warn('html tag not match', prevHtmlTag, tag)
       return false
     }
   } else if (content.endsWith('/>') || HTML_SELF_CLOSE_TAG_RE.test(content)) {
+    if (!validateTagName(tag)) {
+      return false
+    }
+
     token = state.push('html_self', tag, 0)
   } else {
+    if (!validateTagName(tag)) {
+      return false
+    }
+
     token = state.push('html_open', tag, 1)
     prevHtmlTags.push(tag)
   }

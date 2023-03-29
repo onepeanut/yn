@@ -5,7 +5,7 @@ const data: BaseLanguage = {
   'app-name': 'Yank Note',
   'about': '关于',
   'feedback': '反馈',
-  'slogan': '一款面向程序员的 Markdown 编辑器',
+  'slogan': '一款强大可扩展的 Markdown 编辑器，为生产力而生',
   'cancel': '取消',
   'undo': '撤销',
   'ok': '确定',
@@ -35,7 +35,6 @@ const data: BaseLanguage = {
   'install-extension-tips': '请先安装并启用 “%s” 扩展',
   'not-support-mas': '从 Mac Apple Store 中下载的应用不支持此拓展。',
   'learn-more': '了解更多',
-  'previewer': '预览器',
   'default': '默认',
   'print': '打印',
   'premium': {
@@ -47,11 +46,11 @@ const data: BaseLanguage = {
       'intro': '介绍',
       'current-plan': '当前版本',
       'included': '已包含',
-      'desc': 'Yank Note 是一款面向程序员的开源笔记应用，从 2018 年开始，一直在不断更新。 因为软件的开发和维护需要精力和资金（如每年的苹果开发者账号订阅），现推出付费高级版。如果您需要高级版功能，或想支持我的开发，可以选择购买高级版。',
+      'desc': 'Yank Note 是一款面向程序员的开源笔记应用，从 2018 年开始，一直在不断开发和更新。因为软件的开发和维护需要精力和资金，现推出付费高级版。如果你想支持我的开发工作，或需要使用高级版功能，可以选择购买高级版。',
       'free-desc': '满足大部分用户需求',
       'premium-desc': '更多高级功能',
-      'free-list': '基础编辑功能\n图形嵌入\n运行代码片段\nHTML 小工具\n文档加密\n内置终端\nOpenAI 集成\n文档历史\n插件扩展',
-      'premium-list': '基础编辑功能\n图形嵌入\n运行代码片段\nHTML 小工具\n文档加密\n内置终端\nOpenAI 集成\n文档历史 (增强)\n插件扩展 (更多)\n宏替换\n暗色主题',
+      'free-list': '基础编辑功能\n图形嵌入\n运行代码片段\nHTML 小工具\n文档加密\n内置终端\n文档历史\n插件扩展',
+      'premium-list': '基础编辑功能\n图形嵌入\n运行代码片段\nHTML 小工具\n文档加密\n内置终端\n文档历史 (增强)\n插件扩展 (更多)\n宏替换\n暗色主题',
     },
     'buy': {
       'buy': '购买',
@@ -118,6 +117,7 @@ const data: BaseLanguage = {
         'buttons': {
           'download': '下载',
           'view-changes': '查看更新内容',
+          'download-and-view-changes': '下载并查看更新内容',
           'cancel': '取消',
           'ignore': '忽略'
         }
@@ -259,6 +259,12 @@ const data: BaseLanguage = {
     'extension': {
       'extension-manager': '扩展管理',
     },
+    'theme': {
+      'tips': '主题: %s',
+      'dark': '深色',
+      'light': '浅色',
+      'system': '跟随系统',
+    },
   },
   'view': {
     'outline': '目录',
@@ -285,6 +291,7 @@ const data: BaseLanguage = {
       'create-in-cd': '当前目录创建新文件',
       'copy-name': '复制名称',
       'copy-path': '复制路径',
+      'find-in-folder': '在文件夹中查找',
     },
     'toast': {
       'moved': '[%s] 已移动到 [%s]',
@@ -306,7 +313,8 @@ const data: BaseLanguage = {
     'close-all': '全部关闭',
     'pin': '固定',
     'unpin': '取消固定',
-    'search-tabs': '搜索选项卡',
+    'search-tabs': '搜索标签页',
+    'new-tab': '新建标签页',
   },
   'export-panel': {
     'export': '导出',
@@ -354,6 +362,16 @@ const data: BaseLanguage = {
         'line-numbers': '行号',
         'enable-preview': '开启预览 - 打开新文件使用临时标签，双击标签以更改',
         'font-family': '字体',
+        'complete-emoji': '自动补全 Emoji - 输入 : 时显示 Emoji 列表',
+      },
+      'render': {
+        'md-html': '启用 HTML',
+        'md-breaks': '将 \\n 转换为 &lt;br&gt;',
+        'md-linkify': '自动将类似 URL 的文本转换为链接',
+        'md-typographer': '启用引号美化',
+        'md-sup': '启用上标语法: 29^th^',
+        'md-sub': '启用下标语法: H~2~O',
+        'md-emoji': '启用 Emoji 语法: :smile:',
       },
       'theme': '主题',
       'language': '语言',
@@ -373,6 +391,9 @@ const data: BaseLanguage = {
       'doc-history': {
         'number-limit': '版本保留数',
       },
+      'search': {
+        'number-limit': '搜索结果限制',
+      },
       'server': {
         'host': '监听主机',
         'port': '监听端口',
@@ -388,13 +409,22 @@ const data: BaseLanguage = {
         'bypass-list': 'Bypass List',
         'pac-url': 'PAC URL',
       },
+      'macros': {
+        'macros': '宏',
+        'match': '匹配',
+        'replace': '替换',
+        'match-placeholder': '%foo%',
+        'replace-placeholder': '%foo% -> BAR',
+      },
     },
     'tabs': {
       'repos': '仓库',
       'appearance': '外观',
       'editor': '编辑器',
+      'render': '渲染',
       'image': '图片',
       'proxy': '代理',
+      'macros': '宏替换',
       'other': '其他',
     },
   },
@@ -402,7 +432,6 @@ const data: BaseLanguage = {
     'input-placeholder': '键入字符……',
     'empty': '无结果',
     'files': '快速跳转',
-    'search': '搜索内容',
     'marked': '已标记',
   },
   'editor': {
@@ -418,6 +447,11 @@ const data: BaseLanguage = {
       'reveal-line-in-preview': '在预览中聚焦',
     },
     'switch-editor': '切换编辑器',
+    'default-editor': '默认编辑器',
+  },
+  'previewer': {
+    'default-previewer': '默认预览器',
+    'switch-previewer': '切换预览器',
   },
   'picgo': {
     'setting': {
@@ -525,6 +559,10 @@ const data: BaseLanguage = {
       'title': '标记版本 [%s]',
       'hint': '输入一些信息（可选）',
     },
+    'content-too-long-alert': {
+      'title': '警告',
+      'content': '出于性能考虑，超过 [%s] 字符的文档将不会存储历史。当前文档长度为 [%s] 字符。',
+    },
   },
   'copy-content': {
     'options': '选项: ',
@@ -536,6 +574,8 @@ const data: BaseLanguage = {
     'highlight-code': '高亮代码',
     'rt': '富文本',
     'complete': '转换完成，点击确定复制',
+    'copy-tips': '如需复制部分内容，需要预览区选中后再操作',
+    'copy-tips-selected': '复制选中的内容，%s 个字符',
   },
   'share-preview': {
     'expire': '到期',
@@ -583,12 +623,30 @@ const data: BaseLanguage = {
     'auto-upgrade': '自动升级',
     'unknown-origin-tips': '使用未知来源的扩展可能有风险，仍然要启用吗？',
     'extensions-auto-upgraded': '%s 个扩展已升级',
+    'fetch-registry-failed': '获取扩展仓库失败，请切换到其他仓库源或稍后重试',
   },
   'get-started': {
     'get-started': '开始使用',
     'start': '开始',
     'help': '帮助',
     'recent': '最近打开',
+  },
+  'search-panel': {
+    'search-files': '搜索文件',
+    'placeholder-search': '搜索',
+    'for-history': '(⇅ 切换历史)',
+    'files-to-include': '包含文件',
+    'files-to-exclude': '排除文件',
+    'match-case': '区分大小写',
+    'match-whole-word': '匹配整词',
+    'use-regex': '使用正则表达式',
+    'expand-all': '展开所有',
+    'collapse-all': '折叠所有',
+  },
+  'file-changed-alert': {
+    'title': '文件已更改',
+    'content': '文件已被其他应用更改，是否重新加载？',
+    'reload': '重载',
   },
 }
 

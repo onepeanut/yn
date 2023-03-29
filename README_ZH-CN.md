@@ -1,6 +1,6 @@
 # Yank Note
 
-一款面向程序员的 Markdown 笔记应用 **[全平台下载](https://github.com/purocean/yn/releases)** ｜ **[在线体验>>>](https://yank-note.vercel.app/)**
+一款**强大可扩展**的 Markdown 编辑器，为生产力而生。**[全平台下载](https://github.com/purocean/yn/releases)** ｜ **[在线体验>>>](https://demo.yank-note.com/)**
 
 [![Download](./help/mas_en.svg?.inline)](https://apps.apple.com/cn/app/yank-note/id1551528618) [Mac App Store 版本说明](https://github.com/purocean/yn/issues/65#issuecomment-1065799677)
 
@@ -76,20 +76,16 @@
 
 ## 更新日志
 
-### [v3.43.0](https://github.com/purocean/yn/releases/tag/v3.43.0) 2022-11-14
+### [v3.51.0](https://github.com/purocean/yn/releases/tag/v3.51.0) 2023-03-28
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-win-x64-3.43.0.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-mac-arm64-3.43.0.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-mac-x64-3.43.0.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-linux-x86_64-3.43.0.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.43.0/Yank-Note-linux-amd64-3.43.0.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-win-x64-3.51.0.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-mac-arm64-3.51.0.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-mac-x64-3.51.0.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-linux-x86_64-3.51.0.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.51.0/Yank-Note-linux-amd64-3.51.0.deb)
 
-1. feat: 增加文件列表排序功能
-2. upd: 微调 UI 和 UX
-3. fix: 修复锚点跳转大小写适配问题
-4. fix: 修复图片预览器不能拖动问题
-5. feat(plugin): 上下文菜单项支持选中状态
-6. feat(plugin): 支持自定义编辑器 Tabs 操作按钮
-7. feat(plugin): 优化自定义编辑器相关 API
-8. feat(plugin): 支持加载 `.mjs` 脚本
-9. feat(plugin): 增加 `ctx.base.getAttachmentURL` 方法
-10. feat(plugin): 增加 `ctx.tree.revealCurrentNode` 方法
+1. feat: 优化“快速打开”面板交互
+2. feat: 增加渲染设置
+3. feat: 增加禁用“Emoji”设置
+4. fix: 修复 `markdown-it-sub` 和 `markdown-it-sup` 插件和 HTML 解析冲突的问题
+5. feat(plugin): 增加用户文件接口
+6. feat(plugin): Modal confirm 支持定义对话框宽度
 
 [更多发布说明](https://github.com/purocean/yn/releases)
 
