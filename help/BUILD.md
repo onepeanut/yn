@@ -40,7 +40,7 @@
 
 ## 常见问题
 
-1. 网络问题导致无法下载依赖，修改仓库；以`.npmrc`为例：
+1. 网络问题导致无法下载依赖，修改仓库；以 `.npmrc`为例：
 
 ```ini
 registry=https://mirrors.huaweicloud.com/repository/npm/
@@ -49,9 +49,9 @@ electron_mirror=https://mirrors.huaweicloud.com/electron/
 electron_builder_binaries_mirror=https://mirrors.huaweicloud.com/electron-builder-binaries/
 ```
 
-3. 修改仓库还是无法下载依赖：删除`yarn.lock`文件后重试
-
-3. 安装设置 msvs 版本
+3. 修改仓库还是无法下载依赖：删除 `yarn.lock`文件后重试
+4. 依赖可以正常下载，但是执行命令失败: `npm i -g npm@latest` 或者 `npm i node-gyp@latest`
+5. 安装设置 msvs 版本
 
 ```shell
 # 管理员运行
