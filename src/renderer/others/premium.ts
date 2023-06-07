@@ -117,7 +117,7 @@ export function getPurchased (force = false) {
     token = getLicenseToken()
   }
 
-  return !!(token?.isAvailable)
+  return token ? token.isAvailable : true
 }
 
 export function showPremium (tab?: PremiumTab) {
