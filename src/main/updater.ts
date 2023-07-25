@@ -56,7 +56,7 @@ class UpdateProvider extends GitHubProvider {
   }
 }
 
-const init = (call: () => void) => {
+const init = (call?: () => void) => {
   if (disabled) {
     return
   }
@@ -153,7 +153,7 @@ const init = (call: () => void) => {
       if (result.response === 0) {
         setTimeout(() => {
           autoUpdater.quitAndInstall()
-          call()
+          call?.()
         }, 500)
       }
     })
@@ -195,7 +195,7 @@ app.whenReady().then(() => {
   init(() => {
     setTimeout(() => {
       app.exit(0)
-    }, process.platform === 'darwin' ? 3500 : 0)
+    }, process.platform === 'darwin' ? 8000 : 0)
   })
 
   setTimeout(() => {

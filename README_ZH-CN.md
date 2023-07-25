@@ -76,16 +76,16 @@
 
 ## 更新日志
 
-### [v3.54.0](https://github.com/purocean/yn/releases/tag/v3.54.0) 2023-06-08
+### [v3.56.4](https://github.com/purocean/yn/releases/tag/v3.56.4) 2023-07-23
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.54.0/Yank-Note-win-x64-3.54.0.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.54.0/Yank-Note-mac-arm64-3.54.0.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.54.0/Yank-Note-mac-x64-3.54.0.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.54.0/Yank-Note-linux-x86_64-3.54.0.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.54.0/Yank-Note-linux-amd64-3.54.0.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.56.4/Yank-Note-win-x64-3.56.4.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.56.4/Yank-Note-mac-arm64-3.56.4.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.56.4/Yank-Note-mac-x64-3.56.4.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.56.4/Yank-Note-linux-x86_64-3.56.4.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.56.4/Yank-Note-linux-amd64-3.56.4.deb)
 
-1. feat: 增加聚焦编辑器快捷键 `Shift + Alt/Option + X`
-2. feat: 编辑器菜单支持中文
-3. feat: 优化点击预览滚动到编辑器位置的行为
-4. feat: 优化批量勾选待办（选中后按 `Cmd/Ctrl + O`）的行为
-5. feat(plugin): 设置项增加 `needReloadWindowWhenChanged` 字段，支持定义值变更后是否重载页面
-6. feat(plugin): `SETTING_CHANGED` 钩子增加 `schema` 参数
+1. feat: 升级 Electron 到 22.3.17
+2. feat: 优化当空间不够时上下文菜单弹出位置
+3. feat: 文件选项卡上下文菜单增加文件相关操作
+4. feat: 切换到一个不存在的文件时，提示是否创建
+5. feat(plugin): 增加 `file-tabs.close-tabs` Action
+6. feat(plugin): 增加文件选项卡上下文菜单拓展方法
 
 [更多发布说明](https://github.com/purocean/yn/releases)
 
