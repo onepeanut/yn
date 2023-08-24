@@ -24,7 +24,7 @@ export type SimpleCompletionItem = {
 
 export type SimpleCompletionItemTappers = (items: SimpleCompletionItem[]) => void
 
-let isDefaultEditor = true
+let currentEditor: CustomEditor | null | undefined
 let monaco: typeof Monaco
 let editor: Monaco.editor.IStandaloneCodeEditor
 
@@ -57,6 +57,7 @@ function getFontFamily () {
  */
 export const getDefaultOptions = (): Monaco.editor.IStandaloneEditorConstructionOptions => ({
   value: '',
+  accessibilitySupport: 'off', // prevent ime input flash
   theme: getColorScheme() === 'dark' ? 'vs-dark' : 'vs',
   fontSize: getSetting('editor.font-size', 16),
   wordWrap: store.state.wordWrap,
@@ -85,6 +86,8 @@ export const getDefaultOptions = (): Monaco.editor.IStandaloneEditorConstruction
     enabled: false
   },
   lineNumbers: getSetting('editor.line-numbers', 'on'),
+  occurrencesHighlight: false,
+  renderLineHighlight: 'all',
   wordSeparators: '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?。？！，、；：“”‘’（）《》〈〉【】『』「」﹃﹄〔〕'
 })
 
@@ -315,14 +318,16 @@ export function getValue () {
  */
 export function setValue (text: string) {
   const model = editor.getModel()
-  const maxLine = model!.getLineCount()
-  const endLineLength = model!.getLineLength(maxLine)
+
+  if (!model) {
+    return
+  }
 
   const viewState = editor.saveViewState()
 
   editor.executeEdits('', [
     {
-      range: new (getMonaco().Range)(1, 1, maxLine, endLineLength + 1),
+      range: model.getFullModelRange(),
       text,
       forceMoveMarkers: true
     }
@@ -437,6 +442,10 @@ export function switchEditor (name: string) {
  * @param editor Editor
  */
 export function registerCustomEditor (editor: CustomEditor) {
+  if (!editor.component) {
+    throw new Error('Editor component is required')
+  }
+
   ioc.register('EDITOR_CUSTOM_EDITOR', editor)
   triggerHook('EDITOR_CUSTOM_EDITOR_CHANGE', { type: 'register' })
 }
@@ -470,8 +479,22 @@ export function triggerSave () {
  * Get current editor is default or not.
  * @returns
  */
-export function getIsDefault () {
-  return isDefaultEditor
+export function isDefault () {
+  // default editor has no component
+  return !currentEditor?.component
+}
+
+/**
+ * Get current editor is dirty or not.
+ * @returns
+ */
+export async function isDirty (): Promise<boolean> {
+  // default editor, check documentSaved. TODO refactor
+  if (isDefault()) {
+    return !window.documentSaved
+  }
+
+  return currentEditor?.getIsDirty ? (await currentEditor.getIsDirty()) : false
 }
 
 registerAction({
@@ -483,7 +506,7 @@ registerAction({
 })
 
 registerHook('EDITOR_CURRENT_EDITOR_CHANGE', ({ current }) => {
-  isDefaultEditor = !current?.component
+  currentEditor = current
 })
 
 registerHook('MONACO_BEFORE_INIT', ({ monaco }) => {
@@ -510,6 +533,7 @@ registerHook('MONACO_BEFORE_INIT', ({ monaco }) => {
     colors: {
       'editor.background': '#ffffff',
       'minimap.background': '#f2f2f2',
+      'editor.lineHighlightBackground': '#0000000f',
     }
   })
 
@@ -520,6 +544,7 @@ registerHook('MONACO_BEFORE_INIT', ({ monaco }) => {
     colors: {
       'editor.background': '#131416',
       'minimap.background': '#101113',
+      'editor.lineHighlightBackground': '#ffffff13',
     }
   })
 })
@@ -529,10 +554,6 @@ registerHook('MONACO_READY', (payload) => {
   editor = payload.editor
 
   triggerHook('EDITOR_READY', payload)
-})
-
-registerHook('MONACO_CHANGE_VALUE', payload => {
-  triggerHook('EDITOR_CHANGE', payload)
 })
 
 registerHook('THEME_CHANGE', () => {
@@ -554,6 +575,14 @@ whenEditorReady().then(({ editor }) => {
         editor.revealPositionInCenter(e.position)
       }
     }
+  })
+
+  editor.onDidChangeModelContent(() => {
+    const model = editor.getModel()!
+    const uri = model.uri.toString()
+    const value = model.getValue()
+
+    triggerHook('EDITOR_CONTENT_CHANGE', { uri, value })
   })
 })
 

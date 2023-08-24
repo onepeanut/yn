@@ -289,6 +289,7 @@ const data = {
       'duplicate': 'Duplicate',
       'create-doc': 'New File',
       'create-dir': 'New Folder',
+      'add-item': 'Add Item',
       'rename': 'Rename / Move',
       'delete': 'Delete',
       'open-in-os': 'Open in OS',
@@ -537,6 +538,7 @@ const data = {
       'sync-rendering': 'Synchronous Rendering',
       'word-wrap': 'Word Wrap %s',
       'typewriter-mode': 'Typewriter Mode',
+      'find-in-preview': 'Find in Preview %s',
     },
     'navigation': {
       'goto': 'Goto %s',
@@ -691,6 +693,9 @@ const data = {
     'plugin_image-localization_all': 'Download All Remote Images',
     'tree_refresh': 'Refresh File Tree',
     'plugin_status-bar-theme_switch': 'Switch Theme',
+    'editor_rotate-custom-editors': 'Rotate Custom Editors',
+    'view_show-find-in-preview-widget': 'Show Find in Preview Widget',
+    'tree_reveal-current-node': 'Reveal Current Document in File Tree',
   },
   'keyboard-shortcuts': {
     'workbench': 'Workbench',
@@ -713,7 +718,16 @@ const data = {
     'conflict': 'Conflict',
     'conflict-title': 'Conflict Keybinding (%s)',
     'conflict-commands': 'Following commands have the same keybindings:',
-  }
+  },
+  'find-in-preview': {
+    'action-tips': {
+      'prev': 'Previous Match (Shift + Enter)',
+      'next': 'Next Match (Enter)',
+      'close': 'Close (Esc)',
+    },
+    'results': '%s matches',
+    'toast-no-more': 'No more matches',
+  },
 }
 
 export type BaseLanguage = typeof data
