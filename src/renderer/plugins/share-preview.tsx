@@ -6,9 +6,9 @@ export default {
   register: (ctx) => {
     ctx.registerHook('STARTUP', () => {
       if (ctx.args.MODE === 'share-preview') {
-        ctx.store.watch(state => state.presentation, val => {
+        ctx.store.watch(() => ctx.store.state.presentation, val => {
           if (!val) {
-            ctx.store.commit('setPresentation', true)
+            ctx.store.state.presentation = true
           }
         }, { immediate: true })
       }
@@ -117,6 +117,8 @@ export default {
           id: 'plugin.share-preview',
           type: 'normal',
           title: ctx.i18n.t('status-bar.tool.share-preview'),
+          ellipsis: true,
+          hidden: ctx.view.getRenderEnv()?.safeMode,
           onClick: () => showOptionsPanel()
         },
       )

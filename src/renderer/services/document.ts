@@ -10,15 +10,16 @@ import { useModal } from '@fe/support/ui/modal'
 import { useToast } from '@fe/support/ui/toast'
 import store from '@fe/support/store'
 import type { Doc, PathItem } from '@fe/types'
-import { basename, dirname, extname, isBelongTo, join, normalizeSep } from '@fe/utils/path'
+import { basename, dirname, extname, isBelongTo, join, normalizeSep, relative } from '@fe/utils/path'
 import { getActionHandler } from '@fe/core/action'
 import { triggerHook } from '@fe/core/hook'
-import { HELP_REPO_NAME } from '@fe/support/args'
+import { FLAG_MAS, HELP_REPO_NAME } from '@fe/support/args'
 import * as api from '@fe/support/api'
 import { getLogger } from '@fe/utils'
-import { getRepo, inputPassword, openPath, showItemInFolder } from './base'
+import { getAllRepos, getRepo, inputPassword, openPath, showItemInFolder } from './base'
 import { t } from './i18n'
 import { getSetting, setSetting } from './setting'
+import { isWindows } from '@fe/support/env'
 
 const logger = getLogger('document')
 const lock = new AsyncLock()
@@ -51,6 +52,11 @@ function checkFilePath (path: string) {
  * @returns
  */
 export function getAbsolutePath (doc: Doc) {
+  if (isOutOfRepo(doc)) {
+    const repoPath = doc.repo.substring(misc.ROOT_REPO_NAME_PREFIX.length)
+    return normalizeSep(join(repoPath, doc.path))
+  }
+
   return normalizeSep(join(getRepo(doc.repo)?.path || '/', doc.path))
 }
 
@@ -85,6 +91,15 @@ export function createCurrentDocChecker () {
  */
 export function isMarkdownFile (doc: Doc) {
   return !!(doc && doc.type === 'file' && misc.isMarkdownFile(doc.path))
+}
+
+/**
+ * Check if the document is out of a repository.
+ * @param doc
+ * @returns
+ */
+export function isOutOfRepo (doc?: Doc | null) {
+  return !!(doc && doc.repo.startsWith(misc.ROOT_REPO_NAME_PREFIX))
 }
 
 /**
@@ -522,7 +537,7 @@ export async function ensureCurrentFileSaved () {
     return
   }
 
-  const unsaved = !store.getters.isSaved && currentFile.repo !== HELP_REPO_NAME
+  const unsaved = !store.getters.isSaved.value && currentFile.repo !== HELP_REPO_NAME
 
   if (!unsaved) {
     return
@@ -610,8 +625,8 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
 
   try {
     if (!doc) {
-      store.commit('setCurrentFile', null)
-      store.commit('setCurrentContent', '')
+      store.state.currentFile = null
+      store.state.currentContent = ''
       triggerHook('DOC_SWITCHED', { doc: null })
       return
     }
@@ -621,8 +636,8 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
     let stat
     if (doc.plain) {
       const timer = setTimeout(() => {
-        store.commit('setCurrentFile', { ...doc, status: undefined })
-        store.commit('setCurrentContent', doc?.content || '')
+        store.state.currentFile = { ...doc!, status: undefined }
+        store.state.currentContent = doc?.content || ''
       }, 150)
 
       const res = await api.readFile(doc)
@@ -642,16 +657,16 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
       passwordHash = decrypted.passwordHash
     }
 
-    store.commit('setCurrentFile', {
+    store.state.currentFile = {
       ...doc,
       stat,
       content,
       passwordHash,
       contentHash: hash,
       status: 'loaded'
-    })
+    }
 
-    store.commit('setCurrentContent', content)
+    store.state.currentContent = content
     triggerHook('DOC_SWITCHED', { doc: store.state.currentFile || null })
   } catch (error: any) {
     triggerHook('DOC_SWITCH_FAILED', { doc, message: error.message })
@@ -674,6 +689,42 @@ export async function switchDoc (doc: Doc | null, force = false): Promise<void> 
       done(e)
     }
   })
+}
+
+export async function switchDocByPath (path: string): Promise<void> {
+  logger.debug('switchDocByPath', path)
+
+  // find repo of path
+  const repo = getAllRepos().find(x => isBelongTo(normalizeSep(x.path), normalizeSep(path)))
+  if (repo) {
+    return switchDoc({
+      type: 'file',
+      repo: repo.name,
+      name: basename(path),
+      path: relative(repo.path, path)
+    })
+  } else {
+    if (FLAG_MAS) {
+      useModal().alert({ title: 'Error', content: `Could not find repo of path: ${path}` })
+      return
+    }
+
+    let root = '/'
+    if (isWindows) {
+      const regMatch = path.match(/^([a-zA-Z]:\\)/)
+      if (regMatch) {
+        root = regMatch[1]
+        path = path.replace(root, '/')
+      }
+    }
+
+    return switchDoc({
+      type: 'file',
+      repo: misc.ROOT_REPO_NAME_PREFIX + root,
+      name: basename(path),
+      path: normalizeSep(path)
+    })
+  }
 }
 
 /**

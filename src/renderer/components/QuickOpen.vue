@@ -47,11 +47,11 @@
 
 <script lang="ts">
 import { computed, defineComponent, nextTick, onMounted, ref, toRefs, watch } from 'vue'
-import { useStore } from 'vuex'
 import { useI18n } from '@fe/services/i18n'
 import fuzzyMatch from '@fe/others/fuzzy-match'
 import { fetchSettings } from '@fe/services/setting'
 import { isMarkdownFile, isMarked } from '@fe/services/document'
+import store from '@fe/support/store'
 import { PathItem } from '@fe/types'
 
 type TabKey = 'marked' | 'file' | 'command'
@@ -69,7 +69,6 @@ export default defineComponent({
   },
   setup (props, { emit }) {
     const { t } = useI18n()
-    const store = useStore()
 
     const refInput = ref<HTMLInputElement | null>(null)
     const refResult = ref<HTMLUListElement | null>(null)
@@ -333,7 +332,7 @@ export default defineComponent({
 }
 
 .result {
-  max-height: 300px;
+  max-height: min(calc(100vh - 260px), 300px);
   overflow-y: auto;
   list-style: none;
   padding: 0;
@@ -347,6 +346,7 @@ export default defineComponent({
   padding: 2px 6px;
   user-select: none;
   border-radius: var(--g-border-radius);
+  font-variant-numeric: tabular-nums;
 }
 
 .result li.selected {

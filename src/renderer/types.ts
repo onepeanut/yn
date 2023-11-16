@@ -1,7 +1,10 @@
 import type { Language, MsgPath } from '@share/i18n'
+import type { Doc, FileItem, Repo } from '@share/types'
 import type MarkdownIt from 'markdown-it'
 import type Token from 'markdown-it/lib/token'
 import type * as Monaco from 'monaco-editor'
+
+export * from '@share/types'
 
 export type TTitle = keyof {[K in MsgPath as `T_${K}`]: never}
 
@@ -78,54 +81,22 @@ export interface Action<T extends string = string> {
 
 export type PremiumTab = 'intro' | 'activation'
 
-export interface PathItem {
-  repo: string;
-  path: string;
-}
-
-export interface FileItem extends PathItem { name: string }
-
-export interface FileStat {
-  mtime: number,
-  birthtime: number,
-  size: number,
-}
-
-export interface Doc extends PathItem {
-  type: 'file' | 'dir';
-  name: string;
-  content?: string;
-  title?: string;
-  passwordHash?: string;
-  contentHash?: string;
-  stat?: FileStat,
-  status?: 'loaded' | 'save-failed' | 'saved';
-  absolutePath?: string,
-  plain?: boolean;
-}
-
-export interface Repo {
-  name: string;
-  path: string;
-}
-
 export namespace Components {
   export namespace Modal {
     interface BaseParams {
       title?: string;
       content?: string;
+      component?: any;
       okText?: string;
       cancelText?: string;
       modalWidth?: string;
     }
 
     export interface ConfirmModalParams extends BaseParams {
-      component?: any;
       action?: any;
     }
 
     export interface AlertModalParams extends BaseParams {
-      component?: any;
       action?: any;
     }
 
@@ -152,6 +123,7 @@ export namespace Components {
       label: any; // support string or vue component
       hidden?: boolean;
       checked?: boolean;
+      ellipsis?: boolean;
       onClick: (item?: NormalItem) => void;
     }
 
@@ -166,6 +138,7 @@ export namespace Components {
       payload: any;
       fixed?: boolean;
       temporary?: boolean;
+      class?: string;
     }
 
     export type ActionBtn = {
@@ -282,7 +255,8 @@ export type RenderEnv = {
   file: Doc | null,
   renderCount: number,
   attributes?: Record<string, any>,
-  tokens: Token[]
+  tokens: Token[],
+  safeMode?: boolean,
 }
 
 export type ExtensionCompatible = { value: boolean, reason: string }
@@ -344,6 +318,8 @@ export interface BuildInSettings {
   'editor.font-family': string,
   'editor.complete-emoji': boolean,
   'editor.todo-with-time': boolean,
+  'editor.suggest-on-trigger-characters': boolean,
+  'editor.quick-suggestions': boolean,
   'render.md-html': boolean,
   'render.md-breaks': boolean,
   'render.md-linkify': boolean,
@@ -351,6 +327,10 @@ export interface BuildInSettings {
   'render.md-emoji': boolean,
   'render.md-sub': boolean,
   'render.md-sup': boolean,
+  'render.multimd-multiline': boolean,
+  'render.multimd-rowspan': boolean,
+  'render.multimd-headerless': boolean,
+  'render.multimd-multibody': boolean,
   'assets.path-type': 'relative' | 'absolute' | 'auto',
   'plugin.image-hosting-picgo.server-url': string,
   'plugin.image-hosting-picgo.enable-paste-image': boolean,
@@ -433,6 +413,7 @@ export type BuildInHookTypes = {
   GLOBAL_RESIZE: never,
   GLOBAL_KEYDOWN: KeyboardEvent,
   GLOBAL_KEYUP: KeyboardEvent,
+  DEEP_LINK_OPEN: { url: string },
   ACTION_BEFORE_RUN: { name: string },
   ACTION_AFTER_RUN: { name: string }
   THEME_CHANGE: { name: ThemeName },

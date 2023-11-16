@@ -8,6 +8,8 @@ export * as storage from './storage'
 export * as crypto from './crypto'
 export * as composable from './composable'
 
+const MD_ESCAPE_CHARS_RE = /[*#/()[\]_`]/g
+
 /**
  * quote string
  * @param str
@@ -22,6 +24,10 @@ export function encodeMarkdownLink (path: string) {
     .replace(/\(/g, '%28')
     .replace(/\)/g, '%29')
     .replace(/ /g, '%20')
+}
+
+export function escapeMd (str: string) {
+  return str.replace(MD_ESCAPE_CHARS_RE, '\\$&')
 }
 
 export function removeQuery (url: string) {
@@ -141,4 +147,43 @@ export function copyText (text?: string) {
   document.execCommand('copy')
   document.body.removeChild(textarea)
   toast.show('info', t('copied'))
+}
+
+/**
+ * Wait until condition is true
+ * @param fn
+ * @param interval
+ * @param timeout
+ */
+export function waitCondition (fn: () => boolean | Promise<boolean>, interval = 30, timeout = 10000): (Promise<void> | { cancel: () => void }) {
+  let cancelFlag = false
+
+  const cancel = () => {
+    cancelFlag = true
+  }
+
+  const check = async () => {
+    const startTime = Date.now()
+
+    while (true) {
+      if (cancelFlag) {
+        throw new Error('waitCondition canceled')
+      }
+
+      if (Date.now() - startTime > timeout) {
+        throw new Error('waitCondition timeout')
+      }
+
+      if (await fn()) {
+        return
+      }
+
+      await sleep(interval)
+    }
+  }
+
+  const promise: any = check()
+  promise.cancel = cancel
+
+  return promise
 }

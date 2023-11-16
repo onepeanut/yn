@@ -50,8 +50,8 @@ export default {
             const currentFileSaved = ctx.store.getters.isSaved
 
             logger.debug('startWatch onResult', { remoteFileUpdated, currentFileSaved })
-            if (remoteFileUpdated) {
-              if (currentFileSaved) {
+            if (remoteFileUpdated && ctx.editor.isDefault()) {
+              if (currentFileSaved.value) {
                 ctx.doc.switchDoc(currentFile, true)
               } else {
                 ctx.api.readFile(currentFile).then(({ hash }) => {
@@ -77,7 +77,13 @@ export default {
         },
         async error => {
           logger.error('startWatch error', error)
-          // retry watch
+
+          // ignore system error
+          if ((error as any)?.syscall) {
+            return
+          }
+
+          // retry watch then other error occurred
           await ctx.utils.sleep(2000)
           triggerWatchFile(ctx.store.state.currentFile)
         }

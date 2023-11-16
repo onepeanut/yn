@@ -3,6 +3,7 @@ import { protocol, app, Menu, Tray, powerMonitor, dialog, OpenDialogOptions, scr
 import type TBrowserWindow from 'electron'
 import * as path from 'path'
 import * as os from 'os'
+import * as fs from 'fs-extra'
 import * as yargs from 'yargs'
 import httpServer from './server'
 import store from './storage'
@@ -12,6 +13,7 @@ import { transformProtocolRequest } from './protocol'
 import startup from './startup'
 import { registerAction } from './action'
 import { registerShortcut } from './shortcut'
+import { initJSONRPCClient, jsonRPCClient } from './jsonrpc'
 import { $t } from './i18n'
 import { getProxyAgent } from './proxy-agent'
 import config from './config'
@@ -31,7 +33,7 @@ const isLinux = os.platform() === 'linux'
 
 let urlMode: 'scheme' | 'dev' | 'prod' = 'scheme'
 let skipBeforeUnloadCheck = false
-let mainWindowIsReady = false
+let macOpenFilePath = ''
 
 const trayEnabled = !(yargs.argv['disable-tray'])
 const backendPort = Number(yargs.argv.port) || config.get('server.port', 3044)
@@ -54,6 +56,25 @@ Menu.setApplicationMenu(getMainMenus())
 let fullscreen = false
 let win: TBrowserWindow.BrowserWindow | null = null
 let tray: Tray | null = null
+
+const getOpenFilePathFromArgv = (argv: string[]) => {
+  const filePath = [...argv].reverse().find(x =>
+    x !== process.argv[0] &&
+    !x.startsWith('-') &&
+    !x.endsWith('app.js')
+  )
+
+  return filePath ? path.resolve(process.cwd(), filePath) : null
+}
+
+const getDeepLinkFromArgv = (argv: string[]) => {
+  const lastArgv = argv[argv.length - 1]
+  if (lastArgv && lastArgv.startsWith(APP_NAME + '://')) {
+    return lastArgv
+  }
+
+  return null
+}
 
 const getUrl = (mode?: typeof urlMode) => {
   mode = mode ?? urlMode
@@ -234,13 +255,27 @@ const createWindow = () => {
   win.setMenu(null)
   win && win.loadURL(getUrl())
   restoreWindowBounds()
-  win.on('ready-to-show', () => {
-    if (!mainWindowIsReady && config.get('hide-main-window-on-startup', false)) {
+  win.once('ready-to-show', () => {
+    // open file from argv
+    const filePath = macOpenFilePath || getOpenFilePathFromArgv(process.argv)
+    if (filePath) {
+      win?.show()
+      tryOpenFile(filePath)
+      return
+    }
+
+    // reset macOpenFilePath
+    macOpenFilePath = ''
+
+    // hide window on startup
+    if (config.get('hide-main-window-on-startup', false)) {
       hideWindow()
     } else {
-      win!.show()
+      win?.show()
     }
-    mainWindowIsReady = true
+  })
+
+  win.on('ready-to-show', () => {
     skipBeforeUnloadCheck = false
   })
 
@@ -270,11 +305,13 @@ const createWindow = () => {
     fullscreen = false
   })
 
-  win!.webContents.on('will-navigate', (e) => {
+  initJSONRPCClient(win.webContents)
+
+  win.webContents.on('will-navigate', (e) => {
     e.preventDefault()
   })
 
-  win!.webContents.on('will-prevent-unload', (e) => {
+  win.webContents.on('will-prevent-unload', (e) => {
     if (skipBeforeUnloadCheck) {
       e.preventDefault()
     }
@@ -378,7 +415,7 @@ const showSetting = (key?: string) => {
   }
 
   showWindow()
-  win.webContents.executeJavaScript(`window.ctx.setting.showSettingPanel(${key ? `'${key}'` : ''});`, true)
+  jsonRPCClient.call.ctx.setting.showSettingPanel(key)
 }
 
 const toggleFullscreen = () => {
@@ -393,7 +430,7 @@ const serve = () => {
       server.on('error', (e: Error) => {
         console.error(e)
 
-        if (e.message.includes('EADDRINUSE')) {
+        if (e.message.includes('EADDRINUSE') || e.message.includes('EACCES')) {
           // wait for electron app ready.
           setTimeout(async () => {
             await dialog.showMessageBox({
@@ -458,6 +495,24 @@ function refreshMenus () {
   }
 }
 
+async function tryOpenFile (path: string) {
+  console.log('tryOpenFile', path)
+  const stat = await fs.stat(path)
+
+  if (stat.isFile()) {
+    jsonRPCClient.call.ctx.doc.switchDocByPath(path)
+    showWindow()
+  } else {
+    win && dialog.showMessageBox(win, { message: 'Yank Note only support open file.' })
+  }
+}
+
+async function tryHandleDeepLink (url: string) {
+  if (url) {
+    jsonRPCClient.call.ctx.base.triggerDeepLinkOpen(url)
+  }
+}
+
 registerAction('show-main-window', showWindow)
 registerAction('hide-main-window', hideWindow)
 registerAction('toggle-fullscreen', toggleFullscreen)
@@ -476,17 +531,48 @@ registerAction('get-proxy-agent', getProxyAgent)
 
 powerMonitor.on('shutdown', quit)
 
+if (process.defaultApp) {
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient(APP_NAME, process.execPath, [path.resolve(process.argv[1])])
+  }
+} else {
+  app.setAsDefaultProtocolClient(APP_NAME)
+}
+
 const gotTheLock = app.requestSingleInstanceLock()
 if (!gotTheLock) {
   app.exit()
 } else {
-  app.on('second-instance', () => {
+  app.on('second-instance', (e, argv) => {
+    console.log('second-instance', argv)
     showWindow()
+
+    const url = getDeepLinkFromArgv(argv)
+    if (url) {
+      tryHandleDeepLink(url)
+      return
+    }
+
+    // only check last param of argv.
+    const path = getOpenFilePathFromArgv([argv[argv.length - 1]])
+    if (path) {
+      tryOpenFile(path)
+    }
   })
 
-  app.on('open-file', (e) => {
-    win && dialog.showMessageBox(win, { message: 'Yank Note dose not support opening files directly.' })
+  app.on('open-file', (e, path) => {
     e.preventDefault()
+
+    if (!win || win.webContents.isLoading()) {
+      macOpenFilePath = path
+    } else {
+      tryOpenFile(path)
+    }
+  })
+
+  app.on('open-url', (e, url) => {
+    e.preventDefault()
+    tryHandleDeepLink(url)
   })
 
   app.on('ready', () => {

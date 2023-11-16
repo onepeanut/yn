@@ -51,9 +51,9 @@ For more information on how to use the following functions, please see [characte
 - **Embedded Applets:** document supports embedded HTML Applets
 - **Embed PlantUML graphics:** document supports embedded plantUML graphics
 - **Embed drawio graphics:** document supports embedded drawio graphics
-- **Embed ECharts graphics:** document supports embeded Echarts graphics
-- **Embed Mermaid graphics:** document supports embeded Mermaid graphics
-- **Embed Luckysheet tables:** document supports embeded Luckysheet tables
+- **Embed ECharts graphics:** document supports embedded Echarts graphics
+- **Embed Mermaid graphics:** document supports embedded Mermaid graphics
+- **Embed Luckysheet tables:** document supports embedded Luckysheet tables
 - **Mind map:** nested list can be displayed in the form of a mind map
 - **Element attribute writing:** any attribute of an element can be customized
 - **Table enhancement:** support table title with multiple lines of text, list and other features
@@ -76,19 +76,24 @@ For more information on how to use the following functions, please see [characte
 
 ## Changelogs
 
-### [v3.59.2](https://github.com/purocean/yn/releases/tag/v3.59.2) 2023-08-15
+### [v3.63.3](https://github.com/purocean/yn/releases/tag/v3.63.3) 2023-10-03
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-win-x64-3.59.2.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-mac-arm64-3.59.2.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-mac-x64-3.59.2.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-linux-x86_64-3.59.2.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-linux-amd64-3.59.2.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-win-x64-3.63.3.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-mac-arm64-3.63.3.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-mac-x64-3.63.3.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-linux-x86_64-3.63.3.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-linux-amd64-3.63.3.deb)
 
-1. feat: Add "Find in Preview" function
-2. feat: keep/restore editor state when switching open files
-3. feat: Refresh the picture at the same time when refreshing the document
-4. feat: Add shortcut keys for rotating custom editors
-5. feat: Add icons in the extension manager to identify official extensions
-6. feat: optimize the editor experience
-7. fix: fix can't open file on Windows
-8. refactor(plugin): remove remove `MONACO_CHANGE_VALUE` Hook,
-9. refactor(plugin): `EDITOR_CHANGE` Hook renamed to `EDITOR_CONTENT_CHANGE`
+1. feat: Automatically convert tab-separated tables to markdown format when pasting.
+2. feat: Table cell editing now supports keyboard shortcuts:
+    - `DBLClick`: Edit cell
+    - `Escape`: Exit editing
+    - `Enter`: Confirm editing and edit the next row
+    - `Shift + Enter`: Confirm editing and edit the previous row
+    - `Cmd/Ctrl + Shift + Enter`: Confirm editing and insert a new row below
+    - `Tab`: Confirm editing and edit the next column
+    - `Shift + Tab`: Confirm editing and edit the previous column
+3. feat: Other user experience improvements.
+4. fix: Fixed the issue with abnormal rendering of transparent background PlantUML diagrams.
+5. chore: Dependency upgrades: `@vscode/ripgrep` and `socket.io`.
+6. refactor: No longer using Vuex.
+7. feat(plugin): Added support for `yank-note://` [Deep Link](https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app).
 
 [More release notes](https://github.com/purocean/yn/releases)
 

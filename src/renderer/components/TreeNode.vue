@@ -53,7 +53,6 @@
 
 <script lang="ts">
 import { computed, defineComponent, h, nextTick, PropType, ref, watch } from 'vue'
-import { useStore } from 'vuex'
 import { useContextMenu } from '@fe/support/ui/context-menu'
 import { triggerHook } from '@fe/core/hook'
 import { getContextMenuItems } from '@fe/services/tree'
@@ -63,7 +62,8 @@ import { useI18n } from '@fe/services/i18n'
 import { dirname, extname, isBelongTo, join } from '@fe/utils/path'
 import { useToast } from '@fe/support/ui/toast'
 import { FLAG_READONLY } from '@fe/support/args'
-import type { AppState } from '@fe/support/store'
+import { encodeMarkdownLink, escapeMd } from '@fe/utils'
+import store from '@fe/support/store'
 import SvgIcon from './SvgIcon.vue'
 
 export default defineComponent({
@@ -78,7 +78,6 @@ export default defineComponent({
   setup (props) {
     const { t } = useI18n()
 
-    const store = useStore<AppState>()
     const toast = useToast()
 
     const refFile = ref<any>(null)
@@ -272,7 +271,17 @@ export default defineComponent({
 
     function onDragStart (e: DragEvent) {
       e.stopPropagation()
-      e.dataTransfer!.setData('text/plain', 'tree-node-' + JSON.stringify(itemNode.value))
+
+      const node = itemNode.value
+      if (isMarkdownFile(node)) {
+        e.dataTransfer!.setData('text/plain', `[${escapeMd(node.name)}](${encodeMarkdownLink(node.path)})`)
+      } else if (node.type === 'file' && /\.(png|jpe?g|gif|svg|webp)$/i.test(node.name)) {
+        e.dataTransfer!.setData('text/plain', `![Img](${encodeMarkdownLink(node.path)})`)
+      } else {
+        e.dataTransfer!.setData('text/plain', node.path)
+      }
+
+      e.dataTransfer!.setData('node-info', JSON.stringify(node))
     }
 
     function onDrop (e: DragEvent) {
@@ -280,9 +289,9 @@ export default defineComponent({
       e.stopPropagation()
       changeDragOver(false)
 
-      const data = e.dataTransfer?.getData('text')
-      if (data && data.startsWith('tree-node-')) {
-        const item = JSON.parse(data.replace('tree-node-', '')) as Components.Tree.Node
+      const data = e.dataTransfer?.getData('node-info')
+      if (data) {
+        const item = JSON.parse(data) as Components.Tree.Node
         handleFileDrop(item, e.altKey)
       }
     }
@@ -422,6 +431,7 @@ summary > .item {
   text-overflow: ellipsis;
   word-break: break-all;
   height: 26px;
+  font-variant-numeric: tabular-nums;
 }
 
 .item-action {

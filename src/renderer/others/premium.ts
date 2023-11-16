@@ -25,6 +25,8 @@ type Payload = {
   addDevice: { licenseId: string }
   fetchDevices: { licenseId: string }
   upgradeLicense: { oldLicense: string, locale: string }
+  checkDevice: { device: string }
+  genDeviceString: {},
 }
 
 export async function requestApi<T extends keyof Payload> (method: T, payload: Payload[T]) {
@@ -172,7 +174,7 @@ export function getLicenseToken () {
   return syncCacheLicenseToken(null)
 }
 
-async function cleanLicense () {
+export async function cleanLicense () {
   logger.debug('cleanLicense')
   // do not clean old license
   if (!getSetting('license', '').startsWith(tokenPrefix)) {
@@ -212,11 +214,21 @@ async function setLicense (licenseId: string) {
   }
 }
 
+async function checkDevice (device: string) {
+  try {
+    await requestApi('checkDevice', { device })
+  } catch (error) {
+    cleanLicense()
+    throw error
+  }
+}
+
 export async function refreshLicense (opts?: { throwError?: boolean }) {
   logger.debug('refreshLicense', opts)
   try {
     const token = getLicenseToken()
     if (token) {
+      await checkDevice(token.device)
       await setLicense(token.licenseId)
     }
   } catch (error) {
@@ -232,6 +244,17 @@ export async function activateLicense (licenseId: string) {
   logger.debug('activateLicense', licenseId)
   await requestApi('addDevice', { licenseId })
   await setLicense(licenseId)
+}
+
+export async function activateByTokenString (tokenString: string) {
+  logger.debug('activateByToken', tokenString)
+  await setSetting('license', tokenPrefix + tokenString)
+  const token = getLicenseToken()
+  if (token) {
+    await checkDevice(token.device)
+  } else {
+    throw new Error('INVALID_LICENSE')
+  }
 }
 
 function checkLicenseStatus () {

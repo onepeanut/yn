@@ -81,6 +81,9 @@ const data: BaseLanguage = {
       'tips': '如果您在激活过程中遇到问题，请联系我',
       'tips-wechat': '微信',
       'activation-tips': '激活前请确保您的网络可以正常访问到 <a href="https://yank-note.com" target="_blank">https://yank-note.com</a>',
+      'offline-activation': '离线激活',
+      'online-activation': '在线激活',
+      'get-activation-token': '获取离线激活码',
     },
   },
   'app': {
@@ -141,7 +144,7 @@ const data: BaseLanguage = {
       }
     },
     'error': {
-      'EADDRINUSE': '端口 (%s) 已被使用，请在设置中配置一个其他端口',
+      'EADDRINUSE': '端口 (%s) 已被使用或无权限监听，请在设置中配置一个其他端口',
     }
   },
   'quit-check-dialog': {
@@ -373,15 +376,21 @@ const data: BaseLanguage = {
         'font-family': '字体',
         'complete-emoji': '自动补全 Emoji - 输入 : 时显示 Emoji 列表',
         'todo-with-time': '勾选待办事项时自动添加时间',
+        'suggest-on-trigger-characters': '自动提示 - 输入提示符时显示提示。如果禁用，仍可使用 Ctrl+Space (取决于快捷键配置) 触发',
+        'quick-suggestions': '快速提示 - 在输入文本时显示提示',
       },
       'render': {
         'md-html': '启用 HTML',
         'md-breaks': '将 \\n 转换为 &lt;br&gt;',
         'md-linkify': '自动将类似 URL 的文本转换为链接',
-        'md-typographer': '启用引号美化',
+        'md-typographer': '启用排版美化，如 (c) -> ©',
         'md-sup': '启用上标语法: 29^th^',
         'md-sub': '启用下标语法: H~2~O',
         'md-emoji': '启用 Emoji 语法: :smile:',
+        'multimd-multiline': '[markdown-it-multimd-table]: 启用 multiline 语法',
+        'multimd-rowspan': '[markdown-it-multimd-table]: 启用 rowspan 语法',
+        'multimd-headerless': '[markdown-it-multimd-table]: 启用 headerless 语法',
+        'multimd-multibody': '[markdown-it-multimd-table]: 启用 multibody 语法',
       },
       'theme': '主题',
       'language': '语言',

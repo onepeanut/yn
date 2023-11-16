@@ -181,7 +181,7 @@ async function editTableCell (start: number, end: number, cellIndex: number, inp
 
   let value = cellText
   let inComposition = false
-  let nextAction: 'edit-next-cell' | 'edit-prev-cell' | undefined
+  let nextAction: 'edit-next-cell' | 'edit-prev-cell' | 'edit-bellow-cell' | 'edit-above-cell' | undefined
   let isCancel = false
 
   if (input) {
@@ -223,13 +223,22 @@ async function editTableCell (start: number, end: number, cellIndex: number, inp
         }
 
         if (e.key === 'Enter') {
-          // insert br
-          if (e.shiftKey || hasCtrlCmd(e)) {
+          if (hasCtrlCmd(e) && !e.shiftKey && !e.altKey) {
+            // insert br
             const startPos = input.selectionStart
             const endPos = input.selectionEnd
             input.value = input.value.substring(0, startPos) + '\n' + input.value.substring(endPos)
+          } else if (hasCtrlCmd(e) && e.shiftKey) {
+            const td = input.parentElement as HTMLTableCellElement
+            ok()
+            addRow(td, 1)
+            nextAction = 'edit-bellow-cell'
+          } else if (e.shiftKey) {
+            ok()
+            nextAction = 'edit-above-cell'
           } else {
             ok()
+            nextAction = 'edit-bellow-cell'
           }
 
           e.preventDefault()
@@ -332,6 +341,22 @@ async function handleClick (e: MouseEvent, modal: boolean) {
               handleEditTableCell(td.nextElementSibling as HTMLTableCellElement)
             } else if (nextAction === 'edit-prev-cell' && td.previousElementSibling) {
               handleEditTableCell(td.previousElementSibling as HTMLTableCellElement)
+            } else if (nextAction === 'edit-bellow-cell') {
+              const tr = td.parentElement?.nextElementSibling
+              if (tr && tr.tagName === 'TR') {
+                const nextTd = tr.children[cellIndex] as HTMLTableCellElement
+                if (nextTd && (nextTd.tagName === 'TD' || nextTd.tagName === 'TH')) {
+                  handleEditTableCell(nextTd)
+                }
+              }
+            } else if (nextAction === 'edit-above-cell') {
+              const tr = td.parentElement?.previousElementSibling
+              if (tr && tr.tagName === 'TR') {
+                const nextTd = tr.children[cellIndex] as HTMLTableCellElement
+                if (nextTd && (nextTd.tagName === 'TD' || nextTd.tagName === 'TH')) {
+                  handleEditTableCell(nextTd)
+                }
+              }
             }
           }, 0)
         }
@@ -695,7 +720,7 @@ export default {
         padding: 0 2px !important;
         width: 3em !important;
         text-align: center !important;
-        background: rgba(var(--g-color-0-rgb), 0.2) !important;
+        background: rgba(var(--g-color-0-rgb), 0.1) !important;
         margin-top: -4px !important;
         margin-bottom: -4px !important;
       }
@@ -814,6 +839,7 @@ export default {
             id: 'plugin.table.cell-edit.edit',
             type: 'normal' as any,
             label: ctx.i18n.t('table-cell-edit.context-menu.edit'),
+            ellipsis: true,
             onClick: () => {
               handleClick(e, true)
             }

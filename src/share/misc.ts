@@ -5,6 +5,8 @@ export const ENCRYPTED_MARKDOWN_FILE_EXT = '.c.md'
 
 export const DOC_HISTORY_MAX_CONTENT_LENGTH = 102400
 
+export const ROOT_REPO_NAME_PREFIX = '__root__'
+
 export const DEFAULT_EXCLUDE_REGEX = '^node_modules/$|^.git/$|^\\.'
 
 export const PREMIUM_PUBLIC_KEY = `-----BEGIN PUBLIC KEY-----
@@ -17,7 +19,7 @@ R1VuHglANFSi45+45PRHkGlpwjwnlFCTmj137h/djQ//NinJ73CeI3xHD6+Spppy
 DQIDAQAB
 -----END PUBLIC KEY-----`
 
-export const API_BASE_URL = 'https://api.yank-note.com'
+export const API_BASE_URL = 'https://yank-note.com'
 export const HOMEPAGE_URL = 'https://yank-note.com'
 
 export function isMarkdownFile (path: string) {

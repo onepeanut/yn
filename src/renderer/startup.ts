@@ -24,6 +24,7 @@ import * as editor from '@fe/services/editor'
 import plugins from '@fe/plugins'
 import ctx from '@fe/context'
 import ga from '@fe/support/ga'
+import * as jsonrpc from '@fe/support/jsonrpc'
 import { getLogger } from '@fe/utils'
 
 const logger = getLogger('startup')
@@ -213,11 +214,33 @@ store.watch(() => store.state.currentFile, (val) => {
   })
 }, { immediate: true })
 
+store.watch(() => [
+  store.state.wordWrap,
+  store.state.typewriterMode,
+  store.state.showSide,
+  store.state.showView,
+  store.state.showEditor,
+  store.state.editorPreviewExclusive,
+  store.state.showXterm,
+  store.state.showOutline,
+  store.state.autoPreview,
+  store.state.syncScroll,
+  store.state.currentRepo,
+  store.state.editor,
+], () => {
+  ctx.workbench.ControlCenter.refresh()
+  ctx.statusBar.refreshMenu()
+})
+
 fetchSettings()
 
 whenEditorReady().then(() => {
   setTimeout(extension.init, 0)
 })
+
+// json-rpc
+
+jsonrpc.init({ ctx })
 
 // google analytics
 

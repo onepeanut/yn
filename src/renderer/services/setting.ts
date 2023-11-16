@@ -114,7 +114,7 @@ export async function writeSettings (settings: Record<string, any>) {
   if (data.repos) {
     const repositories: any = {}
     data.repos.forEach(({ name, path }: any) => {
-      name = name.trim()
+      name = name.trim().replace(/_{2,}/g, '_') // disallow consecutive underscores
       path = path.trim()
       if (name && path) {
         repositories[name] = path
@@ -176,7 +176,7 @@ export async function setSetting<T extends keyof BuildInSettings> (key: T, val: 
 export async function showSettingPanel (keyOrGroup?: SettingGroup | keyof BuildInSettings): Promise<void>
 export async function showSettingPanel (keyOrGroup?: string): Promise<void>
 export async function showSettingPanel (keyOrGroup?: string) {
-  store.commit('setShowSetting', true)
+  store.state.showSetting = true
   if (!keyOrGroup) {
     return
   }
@@ -204,5 +204,5 @@ export async function showSettingPanel (keyOrGroup?: string) {
  * Hide setting panel.
  */
 export function hideSettingPanel () {
-  store.commit('setShowSetting', false)
+  store.state.showSetting = false
 }

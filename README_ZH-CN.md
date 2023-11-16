@@ -76,19 +76,24 @@
 
 ## 更新日志
 
-### [v3.59.2](https://github.com/purocean/yn/releases/tag/v3.59.2) 2023-08-15
+### [v3.63.3](https://github.com/purocean/yn/releases/tag/v3.63.3) 2023-11-03
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-win-x64-3.59.2.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-mac-arm64-3.59.2.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-mac-x64-3.59.2.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-linux-x86_64-3.59.2.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.59.2/Yank-Note-linux-amd64-3.59.2.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-win-x64-3.63.3.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-mac-arm64-3.63.3.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-mac-x64-3.63.3.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-linux-x86_64-3.63.3.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.63.3/Yank-Note-linux-amd64-3.63.3.deb)
 
-1. feat: 增加“在预览中查找”功能
-2. feat: 切换已打开的文件时保留/恢复编辑器状态
-3. feat: 刷新文档的时候同时刷新图片
-4. feat: 增加轮换自定义编辑器快捷键
-5. feat: 扩展管理器中增加图标以标识官方扩展
-6. feat: 优化编辑器使用体验
-7. fix: 修复 Windows 上不能在系统中打开目录的问题
-7. refactor(plugin): 移除 remove `MONACO_CHANGE_VALUE` Hook,
-8. refactor(plugin): `EDITOR_CHANGE` Hook 更名 `EDITOR_CONTENT_CHANGE`
+1. feat: 粘贴 tab 分割的表格时候自动转化为 markdown 格式表格
+2. feat: 表格编辑编辑单元格时支持快捷键
+    - `DBLClick`: 编辑单元格
+    - `Escape`: 退出编辑
+    - `Enter`: 确认编辑并编辑下一行
+    - `Shift + Enter`: 确认编辑并编辑上一行
+    - `Cmd/Ctrl + Shift + Enter`: 确认编辑并插入下一行
+    - `Tab`: 确认编辑并编辑下一列
+    - `Shift + Tab`: 确认编辑并编辑上一列
+3. feat: 其他使用体验提升
+4. fix: 修复渲染透明背景 PlantUML 图形时显示异常的问题
+5. chore: 升级依赖：`@vscode/ripgrep` `socket.io`
+6. refactor: 不再使用 vuex
+7. feat(plugin): 支持 `yank-note://` [Deep Link](https://www.electronjs.org/docs/latest/tutorial/launch-app-from-url-in-another-app)
 
 [更多发布说明](https://github.com/purocean/yn/releases)
 

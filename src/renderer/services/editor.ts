@@ -86,6 +86,8 @@ export const getDefaultOptions = (): Monaco.editor.IStandaloneEditorConstruction
     enabled: false
   },
   lineNumbers: getSetting('editor.line-numbers', 'on'),
+  quickSuggestions: getSetting('editor.quick-suggestions', false),
+  suggestOnTriggerCharacters: getSetting('editor.suggest-on-trigger-characters', true),
   occurrencesHighlight: false,
   renderLineHighlight: 'all',
   wordSeparators: '`~!@#$%^&*()-=+[{]}\\|;:\'",.<>/?。？！，、；：“”‘’（）《》〈〉【】『』「」﹃﹄〔〕'
@@ -205,6 +207,7 @@ export function insert (text: string) {
       forceMoveMarkers: true
     }
   ])
+  editor.pushUndoStop()
   getEditor().focus()
 }
 
@@ -222,6 +225,7 @@ export function insertAt (position: Monaco.Position, text: string) {
       forceMoveMarkers: true
     }
   ])
+  editor.pushUndoStop()
   editor.setPosition(position)
   editor.focus()
 }
@@ -243,6 +247,7 @@ export function replaceLine (line: number, text: string) {
       forceMoveMarkers: true
     }
   ])
+  editor.pushUndoStop()
   editor.setPosition(new monaco.Position(line, text.length + 1))
   editor.focus()
 }
@@ -265,6 +270,7 @@ export function replaceLines (lineStart: number, lineEnd: number, text: string) 
       forceMoveMarkers: true
     }
   ])
+  editor.pushUndoStop()
   editor.setPosition(new monaco.Position(lineEnd, lineEndPos))
   editor.focus()
 }
@@ -277,6 +283,7 @@ export function deleteLine (line: number) {
       text: null
     }
   ])
+  editor.pushUndoStop()
   editor.setPosition(new (getMonaco().Position)(line, 1))
   editor.focus()
 }
@@ -332,6 +339,7 @@ export function setValue (text: string) {
       forceMoveMarkers: true
     }
   ])
+  editor.pushUndoStop()
 
   editor.restoreViewState(viewState)
   editor.focus()
@@ -380,14 +388,14 @@ export function toggleWrap () {
     return
   }
 
-  store.commit('setWordWrap', (isWrapping ? 'off' : 'on'))
+  store.state.wordWrap = isWrapping ? 'off' : 'on'
 }
 
 /**
  * Toggle typewriter mode.
  */
 export function toggleTypewriterMode () {
-  store.commit('setTypewriterMode', !store.state.typewriterMode)
+  store.state.typewriterMode = !store.state.typewriterMode
 }
 
 /**
@@ -434,7 +442,7 @@ export function getMarkdownMonarchLanguage () {
  * @param name Editor name
  */
 export function switchEditor (name: string) {
-  store.commit('setEditor', name)
+  store.state.editor = name
 }
 
 /**
@@ -560,7 +568,7 @@ registerHook('THEME_CHANGE', () => {
   monaco?.editor.setTheme(getColorScheme() === 'dark' ? 'vs-dark' : 'vs')
 })
 
-store.watch(state => state.wordWrap, (wordWrap) => {
+store.watch(() => store.state.wordWrap, (wordWrap) => {
   whenEditorReady().then(({ editor }) => {
     editor.updateOptions({ wordWrap })
   })

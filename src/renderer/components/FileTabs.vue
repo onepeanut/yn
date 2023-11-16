@@ -16,14 +16,13 @@
 </template>
 
 <script lang="ts">
-import { useStore } from 'vuex'
 import { computed, defineComponent, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
 import { Alt, CtrlCmd, getKeysLabel, Shift } from '@fe/core/keybinding'
 import type { Components, Doc } from '@fe/types'
 import { registerHook, removeHook } from '@fe/core/hook'
 import { registerAction, removeAction } from '@fe/core/action'
-import { isEncrypted, isMarkdownFile, isSameFile, isSubOrSameFile, switchDoc, toUri } from '@fe/services/document'
-import type { AppState } from '@fe/support/store'
+import { isEncrypted, isMarkdownFile, isOutOfRepo, isSameFile, isSubOrSameFile, switchDoc, toUri } from '@fe/services/document'
+import store from '@fe/support/store'
 import { useI18n } from '@fe/services/i18n'
 import { FileTabs } from '@fe/services/workbench'
 import { getSetting } from '@fe/services/setting'
@@ -37,10 +36,9 @@ export default defineComponent({
   components: { Tabs },
   setup () {
     const { t, $t } = useI18n()
-    const store = useStore()
 
-    const { currentFile, tabs } = toRefs<AppState>(store.state)
-    const isSaved = computed(() => store.getters.isSaved)
+    const { currentFile, tabs } = toRefs(store.state)
+    const isSaved = store.getters.isSaved
 
     const list = ref<Components.FileTabs.Item[]>([])
     const current = ref(blankUri)
@@ -61,10 +59,12 @@ export default defineComponent({
     }
 
     function setTabs (list: Components.FileTabs.Item[]) {
-      store.commit('setTabs', list.map(item => {
-        item.payload.file = copyDoc(item.payload.file)
+      store.state.tabs = list.map(item => {
+        const file = item.payload.file
+        item.payload.file = copyDoc(file)
+        item.class = isOutOfRepo(file) ? 'out-of-repo' : ''
         return item
-      }))
+      })
     }
 
     function switchFile (file: Doc | null) {
@@ -385,5 +385,9 @@ export default defineComponent({
 <style lang="scss" scoped>
 ::v-deep(.tabs div:only-child[data-key="yank-note://system/blank.md"] > .icon) {
   display: none;
+}
+
+::v-deep(.tabs .tab.out-of-repo) {
+  color: #569bd5;
 }
 </style>

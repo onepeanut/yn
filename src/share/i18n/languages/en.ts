@@ -80,6 +80,9 @@ const data = {
       'tips': 'If you have trouble, please contact me',
       'tips-wechat': 'Wechat',
       'activation-tips': 'Make sure your network can access <a href="https://yank-note.com" target="_blank">https://yank-note.com</a> before activating',
+      'offline-activation': 'Offline Activation',
+      'online-activation': 'Online Activation',
+      'get-activation-token': 'Get Activation Token',
     },
   },
   'app': {
@@ -140,7 +143,7 @@ const data = {
       }
     },
     'error': {
-      'EADDRINUSE': 'Port (%s) is in use, please configure another port in the settings',
+      'EADDRINUSE': 'Port (%s) is in use or insufficient permissions, please configure another port in the settings',
     },
   },
   'quit-check-dialog': {
@@ -382,6 +385,8 @@ const data = {
         'font-family': 'Font Family',
         'complete-emoji': 'Complete Emoji - Input : to display emoji list',
         'todo-with-time': 'Add time when checking todo',
+        'suggest-on-trigger-characters': 'Suggest on trigger characters - You can also use Ctrl+Space (depending on the shortcuts) to trigger',
+        'quick-suggestions': 'Quick Suggestions - Suggest as you type',
       },
       'render': {
         'md-html': 'Enable HTML',
@@ -391,6 +396,10 @@ const data = {
         'md-sup': 'Enable sup syntax: 29^th^',
         'md-sub': 'Enable sub syntax: H~2~O',
         'md-emoji': 'Enable emoji syntax: :smile:',
+        'multimd-multiline': '[markdown-it-multimd-table]: Enable multiline syntax',
+        'multimd-rowspan': '[markdown-it-multimd-table]: Enable rowspan syntax',
+        'multimd-headerless': '[markdown-it-multimd-table]: Enable headerless syntax',
+        'multimd-multibody': '[markdown-it-multimd-table]: Enable multibody syntax',
       },
       'theme': 'Theme',
       'language': 'Language',
