@@ -117,7 +117,8 @@ const MarkdownItPlugin = function umlPlugin (md: Markdown, options: any) {
       .split('\n')
       .slice(startLine, nextLine + 1)
       .join('\n')
-
+      .replace('```plantuml\n', '')
+      .replace('\n```')
     // We generate a token list for the alt property, to mimic what the image parser does.
     const altToken: any = []
     // Remove leading space if any.
@@ -152,17 +153,6 @@ const MarkdownItPlugin = function umlPlugin (md: Markdown, options: any) {
     alt: ['paragraph', 'reference', 'blockquote', 'list']
   })
   md.renderer.rules.uml_diagram = render
-
-  const temp = md.renderer.rules.fence!.bind(md.renderer.rules)
-  md.renderer.rules.fence = (tokens, idx, options, env, slf) => {
-    const token = tokens[idx]
-    if (token.info !== 'plantuml') {
-      return temp(tokens, idx, options, env, slf)
-    }
-
-    const src = generateSourceDefault(token.content)
-    return h(Plantuml, { attrs: token.meta?.attrs, src, idx }) as any
-  }
 }
 
 const Plantuml = defineComponent({
@@ -249,26 +239,8 @@ export default {
   name: 'markdown-plantuml',
   register: ctx => {
     const markers = [{
-      openMarker: '@startuml',
-      closeMarker: '@enduml',
-    }, {
-      openMarker: '@startsalt',
-      closeMarker: '@endsalt',
-    }, {
-      openMarker: '@startmindmap',
-      closeMarker: '@endmindmap',
-    }, {
-      openMarker: '@startgantt',
-      closeMarker: '@endgantt',
-    }, {
-      openMarker: '@startwbs',
-      closeMarker: '@endwbs',
-    }, {
-      openMarker: '@startjson',
-      closeMarker: '@endjson',
-    }, {
-      openMarker: '@startyaml',
-      closeMarker: '@endyaml',
+      openMarker: '```plantuml',
+      closeMarker: '```',
     }]
     markers.forEach((marker) => {
       ctx.markdown.registerPlugin(MarkdownItPlugin, { render, ...marker })
@@ -296,13 +268,12 @@ export default {
 
       items.push(
         { label: '/ ``` PlantUML', insertText: '```plantuml\n@startuml\n${1:a -> b}\n@enduml\n```\n' },
-        { label: '/ @startuml PlantUML', insertText: '@startuml\n${1:a -> b}\n@enduml\n' },
-        { label: '/ @startsalt PlantUML Salt', insertText: '@startsalt\n{\n  Just plain text\n  [This is my button]\n  ()  Unchecked radio\n  (X) Checked radio\n  []  Unchecked box\n  [X] Checked box\n  "Enter text here   "\n  ^This is a droplist^\n}\n@endsalt\n' },
-        { label: '/ @startmindmap PlantUML Mindmap', insertText: '@startmindmap\n* Debian\n** Ubuntu\n*** Linux Mint\n*** Kubuntu\n*** Lubuntu\n*** KDE Neon\n** LMDE\n** SolydXK\n** SteamOS\n** Raspbian with a very long name\n*** <s>Raspmbc</s> => OSMC\n*** <s>Raspyfi</s> => Volumio\n@endmindmap\n' },
-        { label: '/ @startgantt PlantUML Gantt', insertText: '@startgantt\nProject starts 2020-07-01\n[Test prototype] lasts 10 days\n[Prototype completed] happens 2020-07-10\n[Setup assembly line] lasts 12 days\n[Setup assembly line] starts at [Test prototype]\'s end\n@endgantt\n' },
-        { label: '/ @startwbs PlantUML Wbs', insertText: '@startwbs\n* Business Process Modelling WBS\n** Launch the project\n*** Complete Stakeholder Research\n*** Initial Implementation Plan\n** Design phase\n*** Model of AsIs Processes Completed\n****< Model of AsIs Processes Completed1\n****> Model of AsIs Processes Completed2\n***< Measure AsIs performance metrics\n***< Identify Quick Wins\n@endwbs\n' },
-        { label: '/ @startjson PlantUML Json', insertText: '@startjson\n{\n   "fruit":"Apple",\n   "size":"Large",\n   "color": ["Red", "Green"]\n}\n@endjson\n' },
-        { label: '/ @startyaml PlantUML Yaml', insertText: '@startyaml\nfruit: Apple\nsize: Large\ncolor: \n  - Red\n  - Green\n@endyaml\n' },
+        { label: '/ ``` PlantUML Salt', insertText: '```plantuml\n@startsalt\n{\n  Just plain text\n  [This is my button]\n  ()  Unchecked radio\n  (X) Checked radio\n  []  Unchecked box\n  [X] Checked box\n  "Enter text here   "\n  ^This is a droplist^\n}\n@endsalt\n```\n' },
+        { label: '/ ``` PlantUML Mindmap', insertText: '```plantuml\n@startmindmap\n* Debian\n** Ubuntu\n*** Linux Mint\n*** Kubuntu\n*** Lubuntu\n*** KDE Neon\n** LMDE\n** SolydXK\n** SteamOS\n** Raspbian with a very long name\n*** <s>Raspmbc</s> => OSMC\n*** <s>Raspyfi</s> => Volumio\n@endmindmap\n```\n' },
+        { label: '/ ``` PlantUML Gantt', insertText: '```plantuml\n@startgantt\nProject starts 2020-07-01\n[Test prototype] lasts 10 days\n[Prototype completed] happens 2020-07-10\n[Setup assembly line] lasts 12 days\n[Setup assembly line] starts at [Test prototype]\'s end\n@endgantt\n```\n' },
+        { label: '/ ``` PlantUML Wbs', insertText: '```plantuml\n@startwbs\n* Business Process Modelling WBS\n** Launch the project\n*** Complete Stakeholder Research\n*** Initial Implementation Plan\n** Design phase\n*** Model of AsIs Processes Completed\n****< Model of AsIs Processes Completed1\n****> Model of AsIs Processes Completed2\n***< Measure AsIs performance metrics\n***< Identify Quick Wins\n@endwbs\n```\n' },
+        { label: '/ ``` PlantUML Json', insertText: '```plantuml\n@startjson\n{\n   "fruit":"Apple",\n   "size":"Large",\n   "color": ["Red", "Green"]\n}\n@endjson\n```\n' },
+        { label: '/ ``` PlantUML Yaml', insertText: '```plantuml\n@startyaml\nfruit: Apple\nsize: Large\ncolor: \n  - Red\n  - Green\n@endyaml\n```\n' },
       )
     })
 
