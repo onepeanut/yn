@@ -94,6 +94,10 @@ export default defineComponent({
         }
       }
 
+      if (FLAG_DEMO) {
+        return
+      }
+
       const query = {
         cwd: opts?.cwd || store.state.currentRepo?.path || ''
       }
@@ -113,6 +117,9 @@ export default defineComponent({
           toggleXterm(false)
         })
       }
+
+      // force trigger resize event
+      xterm.resize(xterm.cols, xterm.cols)
 
       if (!socket.connected) {
         socket.io.opts.query = query
@@ -148,7 +155,7 @@ export default defineComponent({
       }
 
       cmd.code.split('\n').forEach(x => {
-        input(x.trim())
+        input(x)
         input(eol)
       })
 

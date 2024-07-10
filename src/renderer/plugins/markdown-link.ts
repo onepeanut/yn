@@ -1,29 +1,66 @@
 import StateCore from 'markdown-it/lib/rules_core/state_core'
 import Token from 'markdown-it/lib/token'
-import { Plugin } from '@fe/context'
+import ctx, { Plugin } from '@fe/context'
 import store from '@fe/support/store'
-import { removeQuery, sleep } from '@fe/utils'
+import { removeQuery } from '@fe/utils'
 import { isElectron, isWindows } from '@fe/support/env'
 import { useToast } from '@fe/support/ui/toast'
 import { DOM_ATTR_NAME, DOM_CLASS_NAME } from '@fe/support/args'
-import { basename, dirname, join, resolve } from '@fe/utils/path'
-import { switchDoc } from '@fe/services/document'
+import { basename, dirname, join, normalizeSep, resolve } from '@fe/utils/path'
 import { getAttachmentURL, getRepo, openExternal, openPath } from '@fe/services/base'
-import { getRenderIframe } from '@fe/services/view'
+import { getAllCustomEditors } from '@fe/services/editor'
+import { fetchTree } from '@fe/support/api'
+import type { Doc } from '@share/types'
+import type { Components, PositionState } from '@fe/types'
+import { MARKDOWN_FILE_EXT } from '@share/misc'
 
-async function getElement (id: string) {
-  id = id.replaceAll('%28', '(').replaceAll('%29', ')')
+async function getFirstMatchPath (repo: string, dir: string, fileName: string) {
+  if (fileName.includes('/')) {
+    return fileName
+  }
 
-  const document = (await getRenderIframe()).contentDocument!
+  const findInDir = (items: Components.Tree.Node[]): string | null => {
+    for (const item of items) {
+      const p = normalizeSep(item.path)
+      if (
+        item.type === 'file' &&
+          (p === normalizeSep(join(dir, fileName)) ||
+          p === normalizeSep(join(dir, fileName + MARKDOWN_FILE_EXT)))
+      ) {
+        return item.path
+      }
 
-  const _find = (id: string) => document.getElementById(id) ||
-    document.getElementById(decodeURIComponent(id)) ||
-    document.getElementById(encodeURIComponent(id)) ||
-    document.getElementById(id.replace(/^h-/, '')) ||
-    document.getElementById(decodeURIComponent(id.replace(/^h-/, ''))) ||
-    document.getElementById(encodeURIComponent(id.replace(/^h-/, '')))
+      if (item.children) {
+        const found = findInDir(item.children)
+        if (found) {
+          return found
+        }
+      }
+    }
 
-  return _find(id) || _find(id.toUpperCase())
+    return null
+  }
+
+  const findByName = (items: Components.Tree.Node[]): string | null => {
+    for (const item of items) {
+      if (item.type === 'file' && (item.name === fileName || item.name === `${fileName}${MARKDOWN_FILE_EXT}`)) {
+        return item.path
+      }
+
+      if (item.children) {
+        const found = findByName(item.children)
+        if (found) {
+          return found
+        }
+      }
+    }
+
+    return null
+  }
+
+  const tree = await fetchTree(repo, { by: 'mtime', order: 'desc' }).catch(() => [])
+
+  return findInDir(tree) || findByName(tree)
 }
 
 function getAnchorElement (target: HTMLElement) {
@@ -75,56 +112,66 @@ function handleLink (link: HTMLAnchorElement): boolean {
     openPath(join(basePath, path))
     return true
   } else { // relative link
-    // better scrollIntoView
-    const scrollIntoView = async (el: HTMLElement) => {
-      el.scrollIntoView()
-      // retain 60 px for better view.
-      const contentWindow = (await getRenderIframe()).contentWindow!
-      contentWindow.scrollBy(0, -60)
+    const tmp = decodeURI(href).split('#')
+    const rePos = /:([0-9]+),?([0-9]+)?$/
 
-      // highlight element
-      el.classList.add(DOM_CLASS_NAME.PREVIEW_HIGHLIGHT)
-      await sleep(1000)
-      el.classList.remove(DOM_CLASS_NAME.PREVIEW_HIGHLIGHT)
-    }
-
-    if (/(\.md$|\.md#)/.test(href)) { // markdown file
-      const tmp = decodeURI(href).split('#')
-
-      let path = tmp[0]
-      if (!path.startsWith('/')) { // to absolute path
-        path = join(dirname(filePath || ''), path)
+    const parsePathPos = (path: string): {pos: [number, number] | null, path: string} => {
+      const match = path.match(rePos)
+      let pos: [number, number] | null = null
+      if (match) {
+        path = path.replace(rePos, '')
+        pos = [parseInt(match[1]), match[2] ? parseInt(match[2]) : 1]
       }
 
-      switchDoc({
-        path,
-        name: basename(path),
-        repo: fileRepo,
-        type: 'file'
-      }).then(async () => {
-        const hash = tmp.slice(1).join('#')
-        // jump anchor
-        if (hash) {
-          await sleep(50)
-          const el = await getElement(hash)
+      return { pos, path }
+    }
 
-          if (el) {
-            await sleep(0)
-            scrollIntoView(el)
+    const isWikiLink = !!link.getAttribute(DOM_ATTR_NAME.WIKI_LINK)
 
-            // reveal editor lint when click heading
-            if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(el.tagName)) {
-              el.click()
-            }
-          }
-        }
-      })
+    const _switchDoc = async () => {
+      let { path, pos } = parsePathPos(normalizeSep(tmp[0]))
+      const dir = dirname(filePath || '')
 
+      if (isWikiLink) {
+        path = normalizeSep(path)
+        path = path.replace(/:/g, '/') // replace all ':' to '/'
+        path = await getFirstMatchPath(fileRepo, dir, path) || path
+        path = path.endsWith(MARKDOWN_FILE_EXT) ? path : `${path}${MARKDOWN_FILE_EXT}`
+      }
+
+      if (!path.startsWith('/')) { // to absolute path
+        path = join(dir, path)
+      }
+
+      const file: Doc = { path, type: 'file', name: basename(path), repo: fileRepo }
+
+      const hash = tmp.slice(1).join('#')
+      const position: PositionState | null = pos ? { line: pos[0], column: pos[1] } : hash ? { anchor: hash } : null
+      await ctx.doc.switchDoc(file, { source: 'markdown-link', position })
+    }
+
+    const path = normalizeSep(tmp[0])
+    const file: Doc = { path, type: 'file', name: basename(path), repo: fileRepo }
+
+    const isMarkdownFile = /(\.md$|\.md#|\.md:)/.test(href)
+    const supportOpenDirectly = isMarkdownFile || getAllCustomEditors().some(x => x.when?.({ doc: file }))
+
+    if (supportOpenDirectly) {
+      _switchDoc()
       return true
     } else if (href && href.startsWith('#')) { // for anchor
-      getElement(href.replace(/^#/, '')).then(el => {
-        el && scrollIntoView(el)
-      })
+      const position: PositionState = { anchor: href.replace(/^#/, '') }
+      ctx.doc.switchDoc(ctx.store.state.currentFile!, { source: 'markdown-link', position })
+      return true
+    } else if (href && href.startsWith(':') && rePos.test(href)) { // for pos
+      const { pos } = parsePathPos(href)
+      if (pos) {
+        const position = { line: pos[0], column: pos[1] }
+        ctx.doc.switchDoc(ctx.store.state.currentFile!, { source: 'markdown-link', position })
+      }
+      return true
+    } else if (isWikiLink) {
+      _switchDoc()
       return true
     } else {
       return false
@@ -133,7 +180,7 @@ function handleLink (link: HTMLAnchorElement): boolean {
 }
 
 function convertLink (state: StateCore) {
-  const tags = ['audio', 'img', 'source', 'video', 'track', 'a', 'iframe']
+  const tags = ['audio', 'img', 'source', 'video', 'track', 'a', 'iframe', 'embed']
 
   const { repo, path, name } = state.env.file || {}
   if (!repo || !path || !name) {
@@ -141,6 +188,10 @@ function convertLink (state: StateCore) {
   }
 
   const link = (token: Token) => {
+    if (token.attrGet(DOM_ATTR_NAME.WIKI_LINK)) {
+      return
+    }
+
     const isAnchor = token.tag === 'a'
     const attrName = isAnchor ? 'href' : 'src'
     const attrVal = decodeURIComponent(token.attrGet(attrName) || '')
@@ -155,14 +206,24 @@ function convertLink (state: StateCore) {
     const basePath = dirname(path)
     const fileName = basename(removeQuery(attrVal))
 
+    const originAttr = isAnchor ? DOM_ATTR_NAME.ORIGIN_HREF : DOM_ATTR_NAME.ORIGIN_SRC
+    const originPath = removeQuery(attrVal)
+    const filePath = resolve(basePath, originPath)
+
     if (isAnchor) {
       // keep markdown file.
-      if (fileName.endsWith('.md')) {
+      if (fileName.endsWith(MARKDOWN_FILE_EXT)) {
         return
       }
 
       // keep anchor hash.
       if (attrVal.indexOf('#') > -1) {
+        return
+      }
+
+      // support custom editor
+      const file: Doc = { path: resolve(basePath, attrVal), type: 'file', name: fileName, repo }
+      if (getAllCustomEditors().some(x => x.when?.({ doc: file }))) {
         return
       }
 
@@ -172,18 +233,16 @@ function convertLink (state: StateCore) {
       token.attrSet(DOM_ATTR_NAME.LOCAL_IMAGE, 'true')
     }
 
-    const originAttr = isAnchor ? DOM_ATTR_NAME.ORIGIN_HREF : DOM_ATTR_NAME.ORIGIN_SRC
-    token.attrSet(originAttr, attrVal)
-
-    const originPath = removeQuery(attrVal)
-
     const targetUri = getAttachmentURL({
       type: 'file',
       repo,
-      path: resolve(basePath, originPath),
+      path: filePath,
       name: fileName,
     })
 
+    token.attrSet(DOM_ATTR_NAME.TARGET_PATH, filePath)
+    token.attrSet(DOM_ATTR_NAME.TARGET_REPO, repo)
+    token.attrSet(originAttr, attrVal)
     token.attrSet(attrName, targetUri)
   }
 
@@ -286,6 +345,18 @@ export default {
       })
     })
 
+    ctx.registerHook('DOC_SWITCH_SKIPPED', ({ opts }) => {
+      if (opts?.position) {
+        ctx.routines.changePosition(opts.position)
+      }
+    })
+
+    ctx.registerHook('DOC_SWITCHED', ({ doc, opts }) => {
+      if (doc && opts?.position) {
+        ctx.routines.changePosition(opts.position)
+      }
+    })
+
     ctx.markdown.registerPlugin(md => {
       md.core.ruler.push('convert_relative_path', convertLink)
       md.renderer.rules.link_open = (tokens, idx, options, _, slf) => {
@@ -319,7 +390,7 @@ export default {
           onClick: async () => {
             try {
               ctx.ui.useToast().show('info', 'Loading……', 0)
-              const res = await ctx.api.proxyRequest(target.href, { timeout: 10000 }).then(r => r.text())
+              const res = await ctx.api.proxyFetch(target.href, { timeout: 10000 }).then(r => r.text())
               const match = res.match(/<title[^>]*>([^<]*)<\/title>/si) || []
               const title = ctx.lib.lodash.unescape(match[1] || '').trim()
 
@@ -343,5 +414,7 @@ export default {
         })
       }
     })
+
+    return { mdRuleConvertLink: convertLink, htmlHandleLink: handleLink }
   }
 } as Plugin

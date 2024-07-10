@@ -1,6 +1,6 @@
 import type * as Monaco from 'monaco-editor'
-import MarkdownItEmoji from 'markdown-it-emoji'
-import emoji from 'markdown-it-emoji/lib/data/full.json'
+import MarkdownItEmoji from 'markdown-it-emoji/dist/full.cjs.js'
+import emoji from 'markdown-it-emoji/lib/data/full.mjs'
 import type { Ctx, Plugin } from '@fe/context'
 
 const triggerCharacter = ':'
@@ -24,6 +24,11 @@ class EmojiCompletionProvider implements Monaco.languages.CompletionItemProvider
     const line = model.getLineContent(position.lineNumber)
     const cursor = position.column - 1
     const linePrefixText = line.slice(0, cursor)
+
+    // Check if the cursor is in a wiki link
+    if (linePrefixText.lastIndexOf('[[') > linePrefixText.lastIndexOf(']]')) {
+      return { suggestions: [] }
+    }
 
     const match = linePrefixText.match(/:[a-zA-Z0-9]*$/)
     if (!match || linePrefixText.charAt(linePrefixText.length - match[0].length - 1) === ':') {

@@ -1,28 +1,35 @@
-import { Fragment, h } from 'vue'
+import { Fragment, h, shallowRef } from 'vue'
 import AsyncLock from 'async-lock'
 import { cloneDeep } from 'lodash-es'
 import { Optional } from 'utility-types'
 import { URI } from 'monaco-editor/esm/vs/base/common/uri.js'
+import * as ioc from '@fe/core/ioc'
 import * as misc from '@share/misc'
 import extensions from '@fe/others/file-extensions'
 import * as crypto from '@fe/utils/crypto'
 import { useModal } from '@fe/support/ui/modal'
 import { useToast } from '@fe/support/ui/toast'
 import store from '@fe/support/store'
-import type { Doc, PathItem } from '@fe/types'
+import { DocType, type Doc, type DocCategory, type PathItem, type SwitchDocOpts } from '@fe/types'
 import { basename, dirname, extname, isBelongTo, join, normalizeSep, relative, resolve } from '@fe/utils/path'
 import { getActionHandler } from '@fe/core/action'
 import { triggerHook } from '@fe/core/hook'
 import { FLAG_MAS, HELP_REPO_NAME } from '@fe/support/args'
 import * as api from '@fe/support/api'
-import { getLogger } from '@fe/utils'
-import { getAllRepos, getRepo, inputPassword, openPath, showItemInFolder } from './base'
-import { t } from './i18n'
-import { getSetting, setSetting } from './setting'
+import { fileToBase64URL, getLogger } from '@fe/utils'
 import { isWindows } from '@fe/support/env'
+import CreateFilePanel from '@fe/components/CreateFilePanel.vue'
+import { getAllRepos, getRepo, inputPassword, openPath, showItemInFolder } from './base'
+import { $$t, t } from './i18n'
+import { getSetting, setSetting } from './setting'
 
 const logger = getLogger('document')
 const lock = new AsyncLock()
+
+const supportedExtensionCache = {
+  sortedExtensions: [] as string[],
+  types: new Map<string, { type: DocType, category: DocCategory }>()
+}
 
 function decrypt (content: any, password: string) {
   if (!password) {
@@ -41,8 +48,10 @@ function encrypt (content: any, password: string) {
 }
 
 function checkFilePath (path: string) {
-  if (path.includes('#')) {
-    throw new Error('Path should not contain #')
+  // check filename is valid
+  const filename = basename(path)
+  if (/[<>:"|?*#]/.test(filename)) {
+    throw new Error(t('document.invalid-filename', '< > : " / \\ | ? * #'))
   }
 }
 
@@ -93,6 +102,10 @@ export function isMarkdownFile (doc: Doc) {
   return !!(doc && doc.type === 'file' && misc.isMarkdownFile(doc.path))
 }
 
+export function supported (doc: Doc) {
+  return !!(doc && doc.type === 'file' && supportedExtensionCache.sortedExtensions.some(x => doc.path.endsWith(x)))
+}
+
 /**
  * Check if the document is out of a repository.
  * @param doc
@@ -117,7 +130,7 @@ export function isEncrypted (doc?: Pick<Doc, 'path' | 'type'> | null): boolean {
  * @param docB
  * @returns
  */
-export function isSameRepo (docA?: Doc | null, docB?: Doc | null) {
+export function isSameRepo (docA: Doc | null | undefined, docB: Doc | null | undefined) {
   return docA && docB && docA.repo === docB.repo
 }
 
@@ -127,7 +140,7 @@ export function isSameRepo (docA?: Doc | null, docB?: Doc | null) {
  * @param docB
  * @returns
  */
-export function isSameFile (docA?: Doc | null, docB?: Doc | null) {
+export function isSameFile (docA: PathItem | null | undefined, docB: PathItem | null | undefined) {
   return docA && docB && docA.repo === docB.repo && docA.path === docB.path
 }
 
@@ -137,7 +150,7 @@ export function isSameFile (docA?: Doc | null, docB?: Doc | null) {
  * @param docB
  * @returns
  */
-export function isSubOrSameFile (docA?: Doc | null, docB?: Doc | null) {
+export function isSubOrSameFile (docA: PathItem | null | undefined, docB?: PathItem | null | undefined) {
   return docA && docB && docA.repo === docB.repo &&
   (
     isBelongTo(docA.path, docB.path) ||
@@ -150,7 +163,7 @@ export function isSubOrSameFile (docA?: Doc | null, docB?: Doc | null) {
  * @param doc
  * @returns
  */
-export function toUri (doc?: Doc | null): string {
+export function toUri (doc?: PathItem | null): string {
   if (doc && doc.repo && doc.path) {
     return URI.parse(`yank-note://${doc.repo}/${doc.path.replace(/^\//, '')}`).toString()
   } else {
@@ -167,29 +180,47 @@ export function toUri (doc?: Doc | null): string {
 export async function createDoc (doc: Pick<Doc, 'repo' | 'path' | 'content'>, baseDoc: Doc): Promise<Doc>
 export async function createDoc (doc: Optional<Pick<Doc, 'repo' | 'path' | 'content'>, 'path'>, baseDoc?: Doc): Promise<Doc>
 export async function createDoc (doc: Optional<Pick<Doc, 'repo' | 'path' | 'content'>, 'path'>, baseDoc?: Doc) {
+  const docType = shallowRef<DocType | null | undefined>(null)
+
   if (!doc.path) {
     if (baseDoc) {
       const currentPath = baseDoc.type === 'dir' ? baseDoc.path : dirname(baseDoc.path)
 
-      const newFilename = 'new.md'
+      const categories = getAllDocCategories()
+      const markdownCategory = categories.find(x => x.category === 'markdown')
+      const mdType = markdownCategory?.types.find(x => x.extension.includes(misc.MARKDOWN_FILE_EXT))
+      docType.value = mdType
+
+      const newFilename = 'new'
       let filename = await useModal().input({
         title: t('document.create-dialog.title'),
         hint: t('document.create-dialog.hint'),
-        content: t('document.current-path', currentPath),
+        modalWidth: '600px',
+        component: () => h(CreateFilePanel, {
+          currentPath,
+          categories,
+          docType: docType.value,
+          onUpdateDocType: (value: DocType | null | undefined) => {
+            docType.value = value
+          }
+        }),
         value: newFilename,
-        select: [
-          0,
-          newFilename.lastIndexOf('.') > -1 ? newFilename.lastIndexOf('.') : newFilename.length,
-          'forward'
-        ],
+        select: true,
       })
 
       if (!filename) {
         return
       }
 
-      if (!misc.isMarkdownFile(filename)) {
-        filename = filename.replace(/\/$/, '') + misc.MARKDOWN_FILE_EXT
+      if (!docType.value) {
+        throw new Error('Need doc type')
+      }
+
+      const ext = docType.value.extension[0] || ''
+
+      filename = filename.replace(/\/$/, '')
+      if (!filename.endsWith(ext)) {
+        filename += ext
       }
 
       doc.path = join(currentPath, normalizeSep(filename))
@@ -201,12 +232,41 @@ export async function createDoc (doc: Optional<Pick<Doc, 'repo' | 'path' | 'cont
   }
 
   const filename = basename(doc.path)
+  let asBase64 = false
+  let content: string | undefined | null
 
-  const file: Doc = { ...doc, path: doc.path, type: 'file', name: filename, contentHash: 'new' }
+  if (typeof doc.content === 'string') {
+    content = doc.content
+  } else {
+    if (!docType.value) {
+      const _docType = resolveDocType(filename)
+      if (!_docType) {
+        throw new Error('Could not resolve doc type: ' + filename)
+      }
 
-  if (typeof file.content !== 'string') {
-    file.content = `# ${filename.replace(/\.md$/i, '')}\n`
+      docType.value = _docType.type
+    }
+
+    if (docType.value.buildNewContent) {
+      const _content = await docType.value.buildNewContent(filename)
+      if (typeof _content === 'string') {
+        content = _content
+      } else if (_content) {
+        asBase64 = true
+        if ('base64Content' in _content) {
+          content = _content.base64Content
+        } else {
+          content = await fileToBase64URL(_content)
+        }
+      } else {
+        throw new Error('Could not build new content for doc type: ' + filename)
+      }
+    } else {
+      throw new Error('Could not build new content for doc type: ' + filename)
+    }
   }
+
+  const file: Doc = { repo: doc.repo, path: doc.path, type: 'file', name: filename, contentHash: 'new' }
 
   try {
     if (isEncrypted(file)) {
@@ -215,12 +275,17 @@ export async function createDoc (doc: Optional<Pick<Doc, 'repo' | 'path' | 'cont
         return
       }
 
-      const encrypted = encrypt(file.content, password)
-      file.content = encrypted.content
+      const encrypted = encrypt(content, password)
+      content = encrypted.content
     }
 
     checkFilePath(file.path)
-    await api.writeFile(file, file.content)
+
+    if (!content) {
+      throw new Error('Could not get content')
+    }
+
+    await api.writeFile(file, content, asBase64)
 
     triggerHook('DOC_CREATED', { doc: file })
   } catch (error: any) {
@@ -340,7 +405,7 @@ export async function duplicateDoc (originDoc: Doc, newPath?: string) {
  * @param doc
  * @param skipConfirm
  */
-export async function deleteDoc (doc: Doc, skipConfirm = false) {
+export async function deleteDoc (doc: PathItem, skipConfirm = false) {
   if (doc.path === '/') {
     throw new Error('Could\'t delete root dir.')
   }
@@ -355,16 +420,18 @@ export async function deleteDoc (doc: Doc, skipConfirm = false) {
     content: t('document.delete-dialog.content', doc.path),
   })
 
-  if (confirm) {
-    try {
-      await api.deleteFile(doc)
-    } catch (error: any) {
-      useToast().show('warning', error.message)
-      throw error
-    }
-
-    triggerHook('DOC_DELETED', { doc })
+  if (!confirm) {
+    throw new Error('User cancel')
   }
+
+  try {
+    await api.deleteFile(doc)
+  } catch (error: any) {
+    useToast().show('warning', error.message)
+    throw error
+  }
+
+  triggerHook('DOC_DELETED', { doc })
 }
 
 /**
@@ -559,36 +626,45 @@ export async function ensureCurrentFileSaved () {
   try {
     const autoSave = !isEncrypted(currentFile) && getSetting('auto-save', 2000)
     if (autoSave) {
-      await saveContent()
-    } else {
-      const confirm = await useModal().confirm({
-        title: t('save-check-dialog.title'),
-        content: t('save-check-dialog.desc'),
-        action: h(Fragment, [
-          h('button', {
-            onClick: async () => {
-              await saveContent()
-              useModal().ok()
-            }
-          }, t('save')),
-          h('button', {
-            onClick: () => useModal().ok()
-          }, t('discard')),
-          h('button', {
-            onClick: () => useModal().cancel()
-          }, t('cancel')),
-        ])
-      })
-
-      checkFile()
-
-      if (confirm) {
-        if (!store.getters.isSaved && currentFile.content) {
-          store.state.currentContent = currentFile.content!
-        }
-      } else {
-        throw new Error('Document not saved')
+      try {
+        await saveContent()
+        return
+      } catch (error: any) {
+        useToast().show('warning', error.message)
       }
+    }
+
+    const confirm = await useModal().confirm({
+      title: t('save-check-dialog.title'),
+      content: t('save-check-dialog.desc'),
+      action: h(Fragment, [
+        h('button', {
+          onClick: async () => {
+            await saveContent().catch(error => {
+              useToast().show('warning', error.message)
+              throw error
+            })
+
+            useModal().ok()
+          }
+        }, t('save')),
+        h('button', {
+          onClick: () => useModal().ok()
+        }, t('discard')),
+        h('button', {
+          onClick: () => useModal().cancel()
+        }, t('cancel')),
+      ])
+    })
+
+    checkFile()
+
+    if (confirm) {
+      if (!store.getters.isSaved && currentFile.content) {
+        store.state.currentContent = currentFile.content!
+      }
+    } else {
+      throw new Error('Document not saved')
     }
   } catch (error: any) {
     useToast().show('warning', error.message)
@@ -596,17 +672,24 @@ export async function ensureCurrentFileSaved () {
   }
 }
 
-async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
+async function _switchDoc (doc: Doc | null, opts?: SwitchDocOpts): Promise<void> {
   doc = doc ? cloneDeep(doc) : null
 
   logger.debug('switchDoc', doc)
 
-  if (!force && toUri(doc) === toUri(store.state.currentFile) && store.state.currentFile !== undefined) {
-    logger.debug('skip switch', doc)
-    return
+  if (doc && doc.type !== 'file') {
+    throw new Error('Invalid document type')
   }
 
-  await triggerHook('DOC_PRE_SWITCH', { doc }, { breakable: true })
+  await triggerHook('DOC_PRE_SWITCH', { doc, opts }, { breakable: true })
+
+  const force = opts?.force
+
+  if (!force && store.state.currentFile !== undefined && isSameFile(doc, store.state.currentFile)) {
+    logger.debug('skip switch', doc)
+    triggerHook('DOC_SWITCH_SKIPPED', { doc, opts })
+    return
+  }
 
   await ensureCurrentFileSaved().catch(error => {
     if (force) {
@@ -617,17 +700,17 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
   })
 
   if (doc) {
-    doc.plain = extensions.supported(doc.name)
+    doc.plain = !!(extensions.supported(doc.name) || resolveDocType(doc.name)?.type?.plain)
     doc.absolutePath = getAbsolutePath(doc)
   }
 
-  await triggerHook('DOC_BEFORE_SWITCH', { doc }, { breakable: true, ignoreError: true })
+  await triggerHook('DOC_BEFORE_SWITCH', { doc, opts }, { breakable: true, ignoreError: true })
 
   try {
     if (!doc) {
       store.state.currentFile = null
       store.state.currentContent = ''
-      triggerHook('DOC_SWITCHED', { doc: null })
+      triggerHook('DOC_SWITCHED', { doc: null, opts })
       return
     }
 
@@ -667,9 +750,9 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
     }
 
     store.state.currentContent = content
-    triggerHook('DOC_SWITCHED', { doc: store.state.currentFile || null })
+    triggerHook('DOC_SWITCHED', { doc: store.state.currentFile || null, opts })
   } catch (error: any) {
-    triggerHook('DOC_SWITCH_FAILED', { doc, message: error.message })
+    triggerHook('DOC_SWITCH_FAILED', { doc, message: error.message, opts })
     useToast().show('warning', error.message.includes('Malformed') ? t('document.wrong-password') : error.message)
     throw error
   }
@@ -678,12 +761,12 @@ async function _switchDoc (doc: Doc | null, force = false): Promise<void> {
 /**
  * Switch document.
  * @param doc
- * @param force
+ * @param opts
  */
-export async function switchDoc (doc: Doc | null, force = false): Promise<void> {
+export async function switchDoc (doc: Doc | null, opts?: SwitchDocOpts): Promise<void> {
   return lock.acquire('switchDoc', async (done) => {
     try {
-      await _switchDoc(doc, force)
+      await _switchDoc(doc, opts)
       done()
     } catch (e: any) {
       done(e)
@@ -765,7 +848,7 @@ export function isMarked (doc: PathItem & { type?: Doc['type'] }) {
  * @param doc
  * @param reveal
  */
-export async function openInOS (doc: Doc, reveal?: boolean) {
+export async function openInOS (doc: PathItem, reveal?: boolean) {
   const repo = getRepo(doc.repo)
   if (repo) {
     const path = join(repo.path, doc.path)
@@ -805,3 +888,79 @@ export function showHistory (doc: Doc) {
 export function hideHistory () {
   getActionHandler('doc.hide-history')()
 }
+
+function cacheSupportedExtension () {
+  supportedExtensionCache.types.clear()
+  supportedExtensionCache.sortedExtensions = []
+
+  for (const category of getAllDocCategories()) {
+    for (const type of category.types) {
+      for (const ext of type.extension) {
+        supportedExtensionCache.types.set(ext, { type, category })
+        supportedExtensionCache.sortedExtensions.push(ext)
+      }
+    }
+  }
+
+  supportedExtensionCache.sortedExtensions.sort((a, b) => b.length - a.length)
+}
+
+/**
+ * register document category
+ * @param docCategory
+ */
+export function registerDocCategory (docCategory: DocCategory) {
+  ioc.register('DOC_CATEGORIES', docCategory)
+  cacheSupportedExtension()
+}
+
+/**
+ * remove document category
+ * @param category
+ */
+export function removeDocCategory (category: string) {
+  ioc.removeWhen('DOC_CATEGORIES', item => item.category === category)
+  cacheSupportedExtension()
+}
+
+/**
+ * get all document categories
+ * @returns
+ */
+export function getAllDocCategories () {
+  return ioc.get('DOC_CATEGORIES')
+}
+
+/**
+ * resolve document type
+ * @param filename
+ */
+export function resolveDocType (filename: string) {
+  const ext = supportedExtensionCache.sortedExtensions.find(ext => filename.endsWith(ext))
+  return ext ? supportedExtensionCache.types.get(ext) : null
+}
+
+registerDocCategory({
+  category: 'markdown',
+  displayName: 'Markdown',
+  types: [
+    {
+      id: 'markdown-md',
+      displayName: $$t('markdown-file'),
+      extension: [misc.MARKDOWN_FILE_EXT],
+      plain: true,
+      buildNewContent: filename => {
+        return `# ${filename.replace(/\.md$/i, '')}\n`
+      }
+    },
+    {
+      id: 'markdown-encrypted-md',
+      displayName: $$t('encrypted-markdown-file'),
+      extension: [misc.ENCRYPTED_MARKDOWN_FILE_EXT],
+      plain: true,
+      buildNewContent: filename => {
+        return `# ${filename.replace(/\.md$/i, '')}\n`
+      }
+    },
+  ]
+})

@@ -69,6 +69,7 @@ Type '/' in the editor to get prompts
     *[HTML]: Hyper Text Markup Language
     *[W3C]:  World Wide Web Consortium
     The HTML specification is maintained by the W3C.
++ Wiki Link: Supports using `[[filename#anchor|display text]]` or `[[filename:line,column|display text]]` syntax to link documents, such as [[README#Highlights|Features]] [[README:3,4]]
 
 ## Github Alerts
 
@@ -398,6 +399,8 @@ If there is no title, there will be no outer border decoration
 <!-- --applet--  -->
 <button onclick="ctx.ui.useToast().show(`info`, `HELLOWORLD!`)">HELLO</button>
 ```
+
+You can also *<a href="javascript: ctx.showExtensionManager('@yank-note/extension-repl')">install and activate the Vue Repl extension</a>* to write applet using Vue SFC.
 
 ## ECharts
 

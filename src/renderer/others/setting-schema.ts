@@ -30,7 +30,6 @@ const schema: SettingSchema = ({
           path: {
             type: 'string',
             title: 'T_setting-panel.schema.repos.path',
-            readonly: true,
             options: {
               inputAttributes: { placeholder: 'T_setting-panel.schema.repos.path-placeholder', style: 'cursor: pointer' }
             },
@@ -53,9 +52,9 @@ const schema: SettingSchema = ({
       defaultValue: 'system',
       title: 'T_setting-panel.schema.language',
       type: 'string',
-      enum: ['system', 'en', 'zh-CN'],
+      enum: ['system', 'en', 'zh-CN', 'zh-TW'],
       options: {
-        enum_titles: ['System', 'English', '简体中文'],
+        enum_titles: ['System', 'English', '简体中文', '繁體中文'],
       },
       group: 'appearance',
       required: true,
@@ -168,9 +167,9 @@ const schema: SettingSchema = ({
       defaultValue: 'increase',
       title: 'T_setting-panel.schema.editor.ordered-list-completion',
       type: 'string',
-      enum: ['auto', 'increase', 'one'],
+      enum: ['auto', 'increase', 'one', 'off'],
       options: {
-        enum_titles: ['Auto', '1. ···, 2. ···, 3. ···', '1. ···, 1. ···, 1. ···'],
+        enum_titles: ['Auto', '1. ···, 2. ···, 3. ···', '1. ···, 1. ···, 1. ···', 'Off'],
       },
       group: 'editor',
       required: true,
@@ -200,6 +199,14 @@ const schema: SettingSchema = ({
       options: {
         inputAttributes: { placeholder: 'e.g., \'Courier New\', monospace' }
       },
+    },
+    'editor.font-ligatures': {
+      defaultValue: false,
+      title: 'T_setting-panel.schema.editor.font-ligatures',
+      type: 'boolean',
+      format: 'checkbox',
+      group: 'editor',
+      required: true,
     },
     'editor.mouse-wheel-zoom': {
       defaultValue: true,
@@ -241,6 +248,14 @@ const schema: SettingSchema = ({
       group: 'editor',
       required: true,
     },
+    'editor.sticky-scroll-enabled': {
+      defaultValue: true,
+      title: 'T_setting-panel.schema.editor.sticky-scroll-enabled',
+      type: 'boolean',
+      format: 'checkbox',
+      group: 'editor',
+      required: true,
+    },
     'render.md-html': {
       defaultValue: true,
       title: 'T_setting-panel.schema.render.md-html',
@@ -260,6 +275,14 @@ const schema: SettingSchema = ({
     'render.md-linkify': {
       defaultValue: true,
       title: 'T_setting-panel.schema.render.md-linkify',
+      type: 'boolean',
+      format: 'checkbox',
+      group: 'render',
+      required: true,
+    },
+    'render.md-wiki-links': {
+      defaultValue: true,
+      title: 'T_setting-panel.schema.render.md-wiki-links',
       type: 'boolean',
       format: 'checkbox',
       group: 'render',

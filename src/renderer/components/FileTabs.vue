@@ -18,10 +18,10 @@
 <script lang="ts">
 import { computed, defineComponent, onBeforeMount, onBeforeUnmount, ref, toRefs, watch } from 'vue'
 import { Alt, CtrlCmd, getKeysLabel, Shift } from '@fe/core/keybinding'
-import type { Components, Doc } from '@fe/types'
+import type { Components, Doc, PathItem } from '@fe/types'
 import { registerHook, removeHook } from '@fe/core/hook'
 import { registerAction, removeAction } from '@fe/core/action'
-import { isEncrypted, isMarkdownFile, isOutOfRepo, isSameFile, isSubOrSameFile, switchDoc, toUri } from '@fe/services/document'
+import { isEncrypted, isOutOfRepo, isSameFile, isSubOrSameFile, supported, switchDoc, toUri } from '@fe/services/document'
 import store from '@fe/support/store'
 import { useI18n } from '@fe/services/i18n'
 import { FileTabs } from '@fe/services/workbench'
@@ -125,7 +125,7 @@ export default defineComponent({
       return list[index]
     }
 
-    function removeFile (doc?: Doc | null) {
+    function removeFile (doc?: PathItem | null) {
       const files = tabs.value.filter((x: Components.FileTabs.Item) => isSubOrSameFile(doc, x.payload.file))
 
       if (files.length > 0) {
@@ -152,7 +152,7 @@ export default defineComponent({
     async function handleMoved (payload?: { oldDoc: Doc, newDoc: Doc }) {
       if (payload) {
         if (
-          isMarkdownFile(payload.newDoc) &&
+          supported(payload.newDoc) &&
           isSameFile(payload.oldDoc, currentFile.value)
         ) {
           await switchFile(payload.newDoc)
@@ -162,12 +162,12 @@ export default defineComponent({
     }
 
     function handleDocCreated ({ doc }: { doc: Doc | null }) {
-      if (!doc || isMarkdownFile(doc)) {
+      if (!doc || supported(doc)) {
         switchFile(doc)
       }
     }
 
-    function handleDocDeleted ({ doc }: { doc: Doc | null }) {
+    function handleDocDeleted ({ doc }: { doc: PathItem | null }) {
       removeFile(doc)
     }
 

@@ -2,12 +2,13 @@ import * as os from 'os'
 import ip from 'ip'
 import * as fs from 'fs-extra'
 import uniq from 'lodash/uniq'
+import type NodePty from 'node-pty'
 import isEqual from 'lodash/isEqual'
 import * as path from 'path'
 import Koa from 'koa'
 import bodyParser from 'koa-body'
 import * as mime from 'mime'
-import request from 'request'
+import * as undici from 'undici'
 import { promisify } from 'util'
 import { STATIC_DIR, HOME_DIR, HELP_DIR, USER_PLUGIN_DIR, FLAG_DISABLE_SERVER, APP_NAME, USER_THEME_DIR, RESOURCES_DIR, BUILD_IN_STYLES, USER_EXTENSION_DIR, USER_DATA } from '../constant'
 import * as file from './file'
@@ -37,7 +38,7 @@ const noCache = (ctx: any) => {
 }
 
 const checkPermission = (ctx: any, next: any) => {
-  const token = ctx.query._token || (ctx.headers.authorization || '').replace('Bearer ', '')
+  const token = ctx.query._token || (ctx.headers['x-yn-authorization'] || ctx.headers.authorization || '').replace('Bearer ', '')
 
   if (ctx.req._protocol || (!token && isLocalhost(ctx.request.ip))) {
     ctx.req.jwt = { role: 'admin' }
@@ -62,6 +63,7 @@ const checkPermission = (ctx: any, next: any) => {
     guest: [
       '/api/file',
       '/api/settings',
+      '/api/proxy-fetch'
     ]
   }
 
@@ -208,6 +210,7 @@ const attachment = async (ctx: any, next: any) => {
 
       checkPrivateRepo(ctx, repo)
 
+      noCache(ctx)
       ctx.type = mime.getType(path)
       ctx.body = await file.read(repo, path)
     }
@@ -318,30 +321,69 @@ const userFile = async (ctx: any, next: any) => {
 }
 
 const proxy = async (ctx: any, next: any) => {
-  if (ctx.path.startsWith('/api/proxy')) {
-    const data = ctx.method === 'POST' ? ctx.request.body : ctx.query
-    const url = data.url
-    const options = typeof data.options === 'string' ? JSON.parse(ctx.query.options) : data.options
-    const agent = options.proxyUrl
-      ? getAction('new-proxy-agent')(options.proxyUrl)
-      : await getAction('get-proxy-agent')(url)
-    await new Promise<void>((resolve, reject) => {
-      request({ url, agent, encoding: null, ...options }, function (err: any, response: any, body: any) {
-        if (err) {
-          reject(err)
-        } else {
-          ctx.status = response.statusCode
-          ctx.set('content-type', response.headers['content-type'])
+  if (ctx.path.startsWith('/api/proxy-fetch/')) {
+    const url = ctx.originalUrl.replace(/^.*\/api\/proxy-fetch\//, '')
 
-          Object.keys(response.headers).forEach((key) => {
-            ctx.set(`x-origin-${key}`, response.headers[key])
-          })
+    // TODO ssrf
+    // const _url = new URL(url)
+    // if (
+    //   _url.hostname === 'localhost' ||
+    //   (
+    //     (ip.isV4Format(_url.hostname) || ip.isV6Format(_url.hostname)) &&
+    //     ip.isPrivate(_url.hostname)
+    //   )
+    // ) {
+    //   throw new Error('Invalid URL')
+    // }
 
-          ctx.body = body
-          resolve()
-        }
+    let signal: AbortSignal | undefined
+    let timeoutTimer: NodeJS.Timeout | undefined
+
+    try {
+      const {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        host,
+        'x-proxy-url': proxyUrl,
+        'x-proxy-timeout': proxyTimeout,
+        'x-proxy-max-redirections': maxRedirections = '3',
+        ...headers
+      } = ctx.headers
+
+      const dispatcher = proxyUrl
+        ? getAction('new-proxy-dispatcher')(proxyUrl)
+        : await getAction('get-proxy-dispatcher')(url)
+
+      if (proxyTimeout) {
+        const controller = new AbortController()
+        signal = controller.signal
+        timeoutTimer = setTimeout(() => {
+          controller.abort()
+          timeoutTimer = undefined
+        }, Number(proxyTimeout))
+      }
+
+      const response = await undici.request(url, {
+        dispatcher,
+        method: ctx.method,
+        headers,
+        body: ctx.req,
+        signal,
+        maxRedirections: Number(maxRedirections)
       })
-    })
+
+      // Set the response status, headers, and body
+      ctx.status = response.statusCode
+      ctx.set(response.headers)
+      ctx.body = response.body
+
+      response.body.once('close', () => {
+        timeoutTimer && clearTimeout(timeoutTimer)
+      })
+    } catch (error: any) {
+      ctx.status = 500
+      timeoutTimer && clearTimeout(timeoutTimer)
+      throw error
+    }
   } else {
     await next()
   }
@@ -602,6 +644,9 @@ const wrapper = async (ctx: any, next: any, fun: any) => {
 const server = (port = 3000) => {
   const app = new Koa()
 
+  app.use(async (ctx: any, next: any) => await wrapper(ctx, next, checkPermission))
+  app.use(async (ctx: any, next: any) => await wrapper(ctx, next, proxy))
+
   app.use(bodyParser({
     multipart: true,
     formLimit: '50mb',
@@ -612,14 +657,12 @@ const server = (port = 3000) => {
     }
   }))
 
-  app.use(async (ctx: any, next: any) => await wrapper(ctx, next, checkPermission))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, fileContent))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, attachment))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, plantumlGen))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, runCode))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, convertFile))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, searchFile))
-  app.use(async (ctx: any, next: any) => await wrapper(ctx, next, proxy))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, readme))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, userPlugin))
   app.use(async (ctx: any, next: any) => await wrapper(ctx, next, customCss))
@@ -651,7 +694,14 @@ const server = (port = 3000) => {
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const io = require('socket.io')(server, { path: '/ws' })
   // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const pty = require('node-pty')
+
+  let pty: typeof NodePty | null = null
+
+  try {
+    pty = require('node-pty')
+  } catch (error) {
+    console.error(error)
+  }
 
   io.on('connection', (socket: any) => {
     if (!isLocalhost(socket.client.conn.remoteAddress)) {
@@ -659,25 +709,29 @@ const server = (port = 3000) => {
       return
     }
 
-    const ptyProcess = pty.spawn(shell.getShell(), [], {
-      name: 'xterm-color',
-      cols: 80,
-      rows: 24,
-      cwd: socket.handshake.query.cwd || HOME_DIR,
-      env: process.env,
-      useConpty: false,
-    })
-    ptyProcess.onData((data: any) => socket.emit('output', data))
-    ptyProcess.onExit(() => socket.disconnect())
-    socket.on('input', (data: any) => {
-      if (data.startsWith(shell.CD_COMMAND_PREFIX)) {
-        ptyProcess.write(shell.transformCdCommand(data.toString()))
-      } else {
-        ptyProcess.write(data)
-      }
-    })
-    socket.on('resize', (size: any) => ptyProcess.resize(size[0], size[1]))
-    socket.on('disconnect', () => ptyProcess.kill())
+    if (pty) {
+      const ptyProcess = pty.spawn(shell.getShell(), [], {
+        name: 'xterm-color',
+        cols: 80,
+        rows: 24,
+        cwd: socket.handshake.query.cwd || HOME_DIR,
+        env: process.env,
+        useConpty: false,
+      })
+      ptyProcess.onData((data: any) => socket.emit('output', data))
+      ptyProcess.onExit(() => socket.disconnect())
+      socket.on('input', (data: any) => {
+        if (data.startsWith(shell.CD_COMMAND_PREFIX)) {
+          ptyProcess.write(shell.transformCdCommand(data.toString()))
+        } else {
+          ptyProcess.write(data)
+        }
+      })
+      socket.on('resize', (size: any) => ptyProcess.resize(size[0], size[1]))
+      socket.on('disconnect', () => ptyProcess.kill())
+    } else {
+      socket.emit('output', 'node-pty is not compatible with this platform. Please install another version from GitHub https://github.com/purocean/yn/releases')
+    }
   })
 
   const host = config.get('server.host', 'localhost')

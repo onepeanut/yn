@@ -43,29 +43,41 @@ export async function fetchHttp (input: RequestInfo, init?: RequestInit) {
 }
 
 /**
- * Proxy request.
- * @param url URL
- * @param reqOptions
- * @param usePost
+ * Proxy fetch.
+ * @param url string
+ * @param init RequestInit
  * @returns
  */
-export async function proxyRequest (url: string, reqOptions: Record<string, any> = {}, usePost = false) {
-  let res: Response
-  if (usePost) {
-    res = await fetch('/api/proxy', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({
-        url,
-        options: reqOptions
-      })
-    })
-  } else {
-    const options = encodeURIComponent(JSON.stringify(reqOptions))
-    res = await fetch(`/api/proxy?url=${encodeURIComponent(url)}&options=${options}`, {
-      headers: getAuthHeader()
-    })
+export async function proxyFetch (url: string, init?: Omit<RequestInit, 'body'> & {
+  body?: any,
+  timeout?: number,
+  proxy?: string,
+  jsonBody?: boolean,
+}) {
+  init ??= {}
+
+  if (typeof init.timeout === 'number') {
+    init.headers = { ...init.headers, 'x-proxy-timeout': String(init.timeout) }
   }
+
+  if (init.proxy) {
+    init.headers = { ...init.headers, 'x-proxy-url': init.proxy }
+  }
+
+  if (init.redirect === 'error' || init.redirect === 'manual') {
+    init.headers = { ...init.headers, 'x-proxy-max-redirections': '0' }
+  }
+
+  if (init.jsonBody) {
+    init.headers = { ...init.headers, 'Content-Type': 'application/json' }
+    init.body = JSON.stringify(init.body)
+  }
+
+  if (JWT_TOKEN) {
+    init.headers = { ...init.headers, 'x-yn-authorization': 'Bearer ' + JWT_TOKEN }
+  }
+
+  const res: Response = await fetch(`/api/proxy-fetch/${url}`, init)
 
   if (res.headers.get('x-yank-note-api-status') === 'error') {
     const msg = res.headers.get('x-yank-note-api-message') || 'error'
@@ -157,7 +169,7 @@ export async function copyFile (file: FileItem, newPath: string): Promise<ApiRes
  * @param file
  * @returns
  */
-export async function deleteFile (file: FileItem): Promise<ApiResult<any>> {
+export async function deleteFile (file: PathItem): Promise<ApiResult<any>> {
   const { path, repo } = file
   return fetchHttp(`/api/file?path=${encodeURIComponent(path)}&repo=${encodeURIComponent(repo)}`, { method: 'DELETE' })
 }
@@ -324,16 +336,16 @@ export async function search (controller: AbortController, query: ITextQuery): P
 }
 
 /**
- * Watch a file.
+ * Watch file or dir.
  * @param controller
  * @param query
  * @returns
  */
-export async function watchFile (
+export async function watchFs (
   repo: string,
   path: string,
   options: WatchOptions,
-  onResult: (result: { eventName: 'add' | 'change' | 'unlink', path: string, stats?: Stats }) => void,
+  onResult: (result: { eventName: 'add' | 'change' | 'unlink' | 'addDir' | 'unlinkDir', path: string, stats?: Stats }) => void,
   onError: (error: Error) => void
 ) {
   const controller: AbortController = new AbortController()
@@ -469,17 +481,21 @@ export async function convertFile (
  * Run code.
  * @param cmd
  * @param code
- * @param outputStream
+ * @param opts
  * @returns result
  */
-export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, outputStream: true): Promise<ReadableStreamDefaultReader>
-export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, outputStream?: false): Promise<string>
-export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, outputStream = false): Promise<ReadableStreamDefaultReader | string> {
+export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, opts?: { stream?: boolean, signal?: AbortSignal }): Promise<ReadableStreamDefaultReader>
+export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, opts?: { stream?: boolean, signal?: AbortSignal }): Promise<string>
+export async function runCode (cmd: string | { cmd: string, args: string[] }, code: string, opts?: { stream?: boolean, signal?: AbortSignal }): Promise<ReadableStreamDefaultReader | string> {
   const response = await fetchHttp('/api/run', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ cmd, code })
+    body: JSON.stringify({ cmd, code }),
+    signal: opts?.signal
   })
+
+  // compatible with old version
+  const outputStream = typeof opts === 'boolean' ? opts : opts?.stream
 
   if (outputStream) {
     return response.body.getReader()

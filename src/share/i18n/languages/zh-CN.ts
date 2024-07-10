@@ -37,6 +37,8 @@ const data: BaseLanguage = {
   'learn-more': '了解更多',
   'default': '默认',
   'print': '打印',
+  'markdown-file': 'Markdown 文件',
+  'encrypted-markdown-file': '加密的 Markdown 文件',
   'premium': {
     'confetti': '彩色纸屑',
     'need-purchase': '[%s] 需要高级版',
@@ -178,13 +180,14 @@ const data: BaseLanguage = {
   },
   'document': {
     'current-path': '当前路径: %s',
+    'invalid-filename': '文件名不能包含以下字符: %s',
     'password-create': '[创建] 请输入密码',
     'password-save': '[保存] 请输入密码',
     'password-open': '[打开] 请输入密码',
     'wrong-password': '密码错误',
     'file-transform-error': '加密文件和非加密文件不能互相转换',
     'create-dialog': {
-      'title': '创建文件（加密文件以 .c.md 结尾）',
+      'title': '创建文件',
       'hint': '文件名',
     },
     'create-dir-dialog': {
@@ -231,6 +234,7 @@ const data: BaseLanguage = {
     'nav': {
       'nav': '导航',
       'goto': '快速跳转',
+      'reveal-current-file-in-sidebar': '在侧栏中显示当前文件',
       'forward': '前进',
       'back': '后退',
     },
@@ -374,15 +378,18 @@ const data: BaseLanguage = {
         'line-numbers': '行号',
         'enable-preview': '开启预览 - 打开新文件使用临时标签，双击标签以更改',
         'font-family': '字体',
+        'font-ligatures': '字体连字',
         'complete-emoji': '自动补全 Emoji - 输入 : 时显示 Emoji 列表',
         'todo-with-time': '勾选待办事项时自动添加时间',
         'suggest-on-trigger-characters': '自动提示 - 输入提示符时显示提示。如果禁用，仍可使用 Ctrl+Space (取决于快捷键配置) 触发',
+        'sticky-scroll-enabled': '启用粘性滚动 - 当编辑器滚动时，固定显示文档标题等',
         'quick-suggestions': '快速提示 - 在输入文本时显示提示',
       },
       'render': {
         'md-html': '启用 HTML',
         'md-breaks': '将 \\n 转换为 &lt;br&gt;',
         'md-linkify': '自动将类似 URL 的文本转换为链接',
+        'md-wiki-links': '启用 Wiki 链接 - [[link]]',
         'md-typographer': '启用排版美化，如 (c) -> ©',
         'md-sup': '启用上标语法: 29^th^',
         'md-sub': '启用下标语法: H~2~O',
@@ -490,6 +497,7 @@ const data: BaseLanguage = {
   },
   'code-run': {
     'run': '运行',
+    'stop': '停止',
     'run-in-xterm-tips': '在终端中运行代码，%s + 单击不退出解释器',
     'run-in-xterm': '终端中运行',
     'running': '运行中……',
@@ -737,6 +745,11 @@ const data: BaseLanguage = {
     },
     'toast-no-more': '没有更多',
     'results': '%s 个匹配',
+  },
+  'view-context-menu': {
+    'copy-image': '复制图片',
+    'delete-image': '删除图片',
+    'open-in-new-tab': '在新标签页中打开',
   },
 }
 

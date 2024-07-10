@@ -76,16 +76,25 @@ For more information on how to use the following functions, please see [characte
 
 ## Changelogs
 
-### [v3.66.1](https://github.com/purocean/yn/releases/tag/v3.66.1) 2024-01-11
+### [v3.72.2](https://github.com/purocean/yn/releases/tag/v3.72.2) 2024-07-04
 
-[Windows](https://github.com/purocean/yn/releases/download/v3.66.1/Yank-Note-win-x64-3.66.1.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.66.1/Yank-Note-mac-arm64-3.66.1.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.66.1/Yank-Note-mac-x64-3.66.1.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.66.1/Yank-Note-linux-x86_64-3.66.1.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.66.1/Yank-Note-linux-amd64-3.66.1.deb)
+[Windows](https://github.com/purocean/yn/releases/download/v3.72.2/Yank-Note-win-x64-3.72.2.exe) | [macOS arm64](https://github.com/purocean/yn/releases/download/v3.72.2/Yank-Note-mac-arm64-3.72.2.dmg) | [macOS x64](https://github.com/purocean/yn/releases/download/v3.72.2/Yank-Note-mac-x64-3.72.2.dmg) | [Linux AppImage](https://github.com/purocean/yn/releases/download/v3.72.2/Yank-Note-linux-x86_64-3.72.2.AppImage) | [Linux deb](https://github.com/purocean/yn/releases/download/v3.72.2/Yank-Note-linux-amd64-3.72.2.deb)
 
-1. feat: Support [Github-style warning prompts](https://github.com/orgs/community/discussions/16925)
-2. feat: Support displaying open windows in the Dock menu on macOS
-3. feat: Support rendering PlantUML using code blocks
-4. fix: Fix the issue of abnormal line number display when the code block exceeds 100 lines
-5. fix: Fix the issue of not being able to jump to the corresponding position in the preview area after selecting text in the editor
-6. feat(plugin): Custom editor supports defining using classes
+1. feat: Optimize the experience of using automatic numbering for ordered lists, and support disabling automatic numbering in configuration options.
+2. feat: Use the table of contents outline to jump/automatically focus on the editor after displaying the editor.
+3. feat: Optimize syntax suggestion completion, distinguish between inline elements and block elements, and support quickly adding table rows.
+4. feat: Add a right-click context menu for images in the preview area, supporting operations such as copying images and opening images.
+5. feat: Optimize the navigation stack, supporting anchor positioning and maintaining scroll position.
+6. feat: Support automatic scrolling to the bottom when running code.
+7. feat: Automatically trigger Wiki link suggestions when typing `【【`.
+8. feat: Other interaction experience optimizations and bug fixes.
+9. fix: Disable automatic updates for the Windows zip version to avoid repeated upgrade failure issues.
+10. feat(plugin): The `markdown-link` plugin exposes the `mdRuleConvertLink`, `htmlHandleLink` methods.
+11. feat(plugin): `ctx.doc.switchDoc` adds more parameters, supporting jumping to a specified location.
+12. feat(plugin): Add the `ctx.routines.changePosition` method to jump to a specified location in the current document.
+13. feat(plugin): Add the `ctx.view.highlightAnchor` method to highlight/jump to a specified anchor in the current preview area.
+14. feat(plugin): Add the `ctx.view.getScrollTop` method to get the current scroll position of the preview area.
+15. feat(plugin): Add the `DOC_SWITCH_SKIPPED` Hook, which is triggered when attempting to switch to the current document.
 
 [More release notes](https://github.com/purocean/yn/releases)
 

@@ -59,12 +59,12 @@ export default {
           const { data: { path } } = await ctx.api.writeTmpFile(tmpFileName, await ctx.utils.fileToBase64URL(file), true)
           logger.debug('tmp file', path)
 
-          const { result } = await ctx.api.proxyRequest(
+          const { result } = await ctx.api.proxyFetch(
             url,
             {
               method: 'post',
-              body: JSON.stringify({ list: [path] }),
-              headers: { 'Content-Type': 'application/json' }
+              body: { list: [path] },
+              jsonBody: true,
             },
           ).then(r => r.json())
 
@@ -205,10 +205,15 @@ export default {
         el.tagName === 'IMG' &&
         el.getAttribute(DOM_ATTR_NAME.LOCAL_IMAGE)
       ) {
+        const repo = el.getAttribute(DOM_ATTR_NAME.TARGET_REPO)
+        if (repo === ctx.args.HELP_REPO_NAME) {
+          return
+        }
+
         items.push({
           id: 'plugin.image-hosting-picgo.upload-single-image',
           type: 'normal',
-          ellipsis: true,
+          ellipsis: false,
           label: ctx.i18n.t('upload-image') + ' (PicGo)',
           onClick: async () => {
             try {

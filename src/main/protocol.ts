@@ -48,6 +48,8 @@ export async function transformProtocolRequest (request: ProtocolRequest) {
   if (body) {
     req.headers['content-length'] = body.length.toString()
     req._read = Readable.from(body)._read
+  } else {
+    req._read = () => req.push(null)
   }
 
   const out = new Transform({
@@ -68,6 +70,10 @@ export async function transformProtocolRequest (request: ProtocolRequest) {
       // @ts-ignore
       return target[prop]
     },
+  })
+
+  res.on('close', () => {
+    res.emit('finish')
   })
 
   return { req, res, out }

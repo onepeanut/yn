@@ -15,7 +15,7 @@ export default {
     const lock = new AsyncLock()
 
     type Awaited<T> = T extends PromiseLike<infer U> ? Awaited<U> : T;
-    let handler: Awaited<ReturnType<typeof ctx.api.watchFile>> | null = null
+    let handler: Awaited<ReturnType<typeof ctx.api.watchFs>> | null = null
 
     function stopWatch () {
       logger.debug('stopWatch', !!handler)
@@ -33,7 +33,7 @@ export default {
 
       const { repo, path } = doc
       logger.debug('startWatch', repo, path)
-      const watchHandler = await ctx.api.watchFile(
+      const watchHandler = await ctx.api.watchFs(
         repo,
         path,
         { awaitWriteFinish: { stabilityThreshold: 500, pollInterval: 50 }, alwaysStat: true },
@@ -52,7 +52,7 @@ export default {
             logger.debug('startWatch onResult', { remoteFileUpdated, currentFileSaved })
             if (remoteFileUpdated && ctx.editor.isDefault()) {
               if (currentFileSaved.value) {
-                ctx.doc.switchDoc(currentFile, true)
+                ctx.doc.switchDoc(currentFile, { force: true })
               } else {
                 ctx.api.readFile(currentFile).then(({ hash }) => {
                   if (ctx.store.state.currentFile === currentFile && hash !== currentFile.contentHash) {
@@ -63,7 +63,7 @@ export default {
                     }).then((ok) => {
                       if (ok && ctx.store.state.currentFile === currentFile) {
                         ctx.store.state.currentContent = currentFile.content || '' // reset content
-                        ctx.doc.switchDoc(currentFile, true)
+                        ctx.doc.switchDoc(currentFile, { force: true })
                       }
                     })
                   }

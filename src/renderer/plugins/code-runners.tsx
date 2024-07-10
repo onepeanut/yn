@@ -111,6 +111,7 @@ export default {
     ctx.runner.registerRunner({
       name: 'javascript',
       order: 100,
+      nonInterruptible: true,
       match (language) {
         return ['js', 'javascript'].includes(language.toLowerCase())
       },
@@ -156,7 +157,7 @@ export default {
       /* eslint-disable no-template-curly-in-string */
 
       items.push(
-        { label: '/ ``` Run Code', insertText: '```js\n// --run--\n${1:await new Promise(r => setTimeout(r, 500))\nctx.ui.useToast().show("info", "HELLOWORLD!")\nconsole.log("hello world!")}\n```\n' },
+        { label: '/ ``` Run Code', insertText: '```js\n// --run--\n${1:await new Promise(r => setTimeout(r, 500))\nctx.ui.useToast().show("info", "HELLOWORLD!")\nconsole.log("hello world!")}\n```\n', block: true },
       )
     })
   }

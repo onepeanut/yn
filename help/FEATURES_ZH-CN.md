@@ -70,6 +70,7 @@ define:
     *[HTML]: Hyper Text Markup Language
     *[W3C]:  World Wide Web Consortium
     The HTML specification is maintained by the W3C.
++ Wiki 链接：支持使用 `[[文件名#锚点|显示文本]]` 或 `[[文件名:行,列|显示文本]]` 语法来链接文档，如 [[README#Highlights|特色功能]] [[README:3,4]]
 
 ## Github Alerts
 
@@ -396,6 +397,8 @@ function run (type) {
 <!-- --applet--  -->
 <button onclick="ctx.ui.useToast().show(`info`, `HELLOWORLD!`)">HELLO</button>
 ```
+
+你也可以 *<a href="javascript: ctx.showExtensionManager('@yank-note/extension-repl')">安装并启用 Vue Repl 扩展</a>*，使用 Vue SFC 来编写小工具。
 
 ## ECharts 图形
 
