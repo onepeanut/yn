@@ -91,9 +91,11 @@ const RunCode = defineComponent({
       result.value = t('code-run.running')
 
       try {
-        if (!runner.value.nonInterruptible) {
-          abortController.value = new AbortController()
+        if (abortController.value) {
+          abort()
         }
+
+        abortController.value = new AbortController()
 
         const { type, value: val } = await runner.value.run(language!, code, { signal: abortController.value?.signal })
 
@@ -171,6 +173,18 @@ const RunCode = defineComponent({
       runner.value = getAllRunners().find((runner) => runner.match(props.language!, props.firstLine!))
     }
 
+    const selectRunResult = (e: MouseEvent) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const target = e.currentTarget as HTMLElement
+
+      const selection = target.ownerDocument.defaultView!.getSelection()
+      const range = target.ownerDocument.createRange()
+      range.selectNodeContents(e.currentTarget as HTMLElement)
+      selection?.removeAllRanges()
+      selection?.addRange(range)
+    }
+
     watchEffect(refreshRunner)
     registerHook('CODE_RUNNER_CHANGE', refreshRunner)
 
@@ -197,7 +211,7 @@ const RunCode = defineComponent({
             onClick: runInXterm
           }),
         ]),
-        h('div', { class: 'p-mcr-run-code-result skip-export', ref: resultRef }, h('output', { key: runResult, innerHTML: runResult })),
+        h('div', { class: 'p-mcr-run-code-result skip-export', ref: resultRef }, h('output', { onDblclick: selectRunResult, key: runResult, innerHTML: runResult })),
         h('div', { class: 'p-mcr-clear-btn-wrapper skip-print' }, h(
           h(
             'div',
