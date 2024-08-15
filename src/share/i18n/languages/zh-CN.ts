@@ -12,6 +12,7 @@ const data: BaseLanguage = {
   'demo-tips': 'DEMO 模式下一些功能不可用',
   'more': '更多',
   'copied': '已复制',
+  'others': '其他',
   'insert-different-repo-doc': '不能插入不同仓库的文档',
   'need-clipboard-permission': '请授予剪切板权限',
   'click-to-copy': '单击复制',
@@ -42,6 +43,9 @@ const data: BaseLanguage = {
   'switch-repo-n': '切换到仓库 %s',
   'switch-the-last-repo': '切换到最后一个仓库',
   'edit-or-generate-text-using-ai': '使用 AI Copilot 编辑或生成文字',
+  'file-readonly-desc': '当前文件只读，如需编辑请先在系统中[改为可写](%s)，然后[刷新](%s)当前文档。',
+  'can-not-edit-this-file-type': '不能编辑此类型文件',
+  'read-only-mode-desc': '当前是只读模式，不可编辑',
   'premium': {
     'confetti': '彩色纸屑',
     'need-purchase': '[%s] 需要高级版',
@@ -189,6 +193,7 @@ const data: BaseLanguage = {
     'password-open': '[打开] 请输入密码',
     'wrong-password': '密码错误',
     'file-transform-error': '加密文件和非加密文件不能互相转换',
+    'custom-extension': '自定义扩展名',
     'create-dialog': {
       'title': '创建文件',
       'hint': '文件名',
@@ -267,6 +272,7 @@ const data: BaseLanguage = {
       'readme': '应用介绍',
       'features': '特色功能说明',
       'shortcuts': '快捷键',
+      'guide': '使用指引',
       'plugin': '插件开发'
     },
     'terminal': '终端',
@@ -387,6 +393,7 @@ const data: BaseLanguage = {
         'suggest-on-trigger-characters': '自动提示 - 输入提示符时显示提示。如果禁用，仍可使用 Ctrl+Space (取决于快捷键配置) 触发',
         'sticky-scroll-enabled': '启用粘性滚动 - 当编辑器滚动时，固定显示文档标题等',
         'quick-suggestions': '快速提示 - 在输入文本时显示提示',
+        'enable-ai-copilot-action': '启用 AI Copilot 操作 - 当可用时显示 AI Copilot 操作灯泡',
       },
       'render': {
         'md-html': '启用 HTML',
@@ -485,6 +492,10 @@ const data: BaseLanguage = {
     },
     'switch-editor': '切换编辑器',
     'default-editor': '默认编辑器',
+    'action-label': {
+      'reveal-current-file-in-os': '在系统中显示当前文件',
+      'refresh-current-document': '刷新当前文档',
+    },
   },
   'previewer': {
     'default-previewer': '默认预览器',
