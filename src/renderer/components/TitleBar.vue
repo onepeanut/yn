@@ -190,7 +190,7 @@ export default defineComponent({
 
     const titleBarStyles = computed(() => {
       if (isElectron && !isFocused.value) {
-        return { background: '#6e6e6e' }
+        return { background: '#1f1f1f' }
       }
 
       if (
@@ -236,9 +236,9 @@ export default defineComponent({
 
 <style scoped>
 .title-bar {
-  background: #4e4e4e;
+  background: #181818;
   color: #eee;
-  height: 100%;
+  height: 32px;
   transition: all .1s ease-in-out;
   display: flex;
   align-items: center;
