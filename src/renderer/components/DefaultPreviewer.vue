@@ -281,6 +281,7 @@ async function scrollToTop () {
 
 <style lang="scss" scoped>
 .default-previewer {
+  background: #e6e6e6;
   position: relative;
   height: 100%;
   width: 100%;
