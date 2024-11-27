@@ -353,6 +353,7 @@ const data: BaseLanguage = {
       'zoom': '縮放',
       'use-browser': '將使用瀏覽器打印功能',
       'include-bg': '包含背景',
+      'generate-document-outline': '生成文檔大綱',
     },
     'use-html': '使用渲染後的 HTML 轉換',
     'use-markdown': '使用 Markdown 轉換',
@@ -377,7 +378,8 @@ const data: BaseLanguage = {
         'name': '倉庫名',
         'name-placeholder': '請輸入',
         'path': '路徑',
-        'path-placeholder': '請選擇一個路徑'
+        'path-placeholder': '請選擇一個路徑',
+        'enable-indexing': '啟用索引',
       },
       'editor': {
         'mouse-wheel-zoom': '滑鼠滾輪縮放',
@@ -719,6 +721,7 @@ const data: BaseLanguage = {
     'plugin_document-history-stack_forward': '前進到下一個文件',
     'plugin_editor_focus-editor': '聚焦編輯器',
     'plugin_switch-todo_switch': '勾選/取消勾選待辦事項（需在編輯器中選取內容）',
+    'plugin_view-links_view-document-links': '顯示文件中的連結',
     'view_enter-presentation': '進入簡報模式',
     'workbench_show-quick-open': '顯示快速跳轉',
     'workbench_toggle-outline': '顯示/隱藏目錄',
@@ -770,6 +773,20 @@ const data: BaseLanguage = {
     'copy-image': '複製圖片',
     'delete-image': '刪除圖片',
     'open-in-new-tab': '在新標籤中打開',
+  },
+  'index-status': {
+    'switch-repository-html': '請 <a href="javascript:void(0)" data-command="switch-repository">切換到倉庫 [<strong>%s</strong>]</a> 以使用此功能。',
+    'enable-indexing-html': '請 <a href="javascript:void(0)" data-command="enable-indexing">為倉庫 [<strong>%s</strong>] 啟用索引</a> 以使用此功能。',
+    'indexing': '索引中...',
+    'indexed': '已索引',
+  },
+  'view-links': {
+    'links': '連結',
+    'back-links': '反向連結',
+    'no-result': '無結果',
+    'links-in': '“%s”中的連結',
+    'back-links-for': '“%s”的反向連結',
+    're-index': '重新索引',
   },
 }
 

@@ -352,6 +352,7 @@ const data = {
       'zoom': 'Zoom',
       'use-browser': 'The browser printing feature will be used.',
       'include-bg': 'Include background',
+      'generate-document-outline': 'Generate document outline',
     },
     'use-html': 'Use the rendered HTML source',
     'use-markdown': 'Use markdown source',
@@ -386,7 +387,8 @@ const data = {
         'name': 'Name',
         'name-placeholder': 'Name',
         'path': 'Path',
-        'path-placeholder': 'Please select the storage location'
+        'path-placeholder': 'Please select the storage location',
+        'enable-indexing': 'Enable Indexing',
       },
       'editor': {
         'mouse-wheel-zoom': 'Mouse Wheel Zoom',
@@ -718,6 +720,7 @@ const data = {
     'plugin_document-history-stack_forward': 'Forward to Next Document',
     'plugin_editor_focus-editor': 'Focus Editor',
     'plugin_switch-todo_switch': 'Check / Uncheck Todo (need to select the content in the editor first)',
+    'plugin_view-links_view-document-links': 'View Links of Current Document',
     'view_enter-presentation': 'Enter Presentation Mode',
     'workbench_show-quick-open': 'Show Quick Open',
     'workbench_toggle-outline': 'Show / Hide Outline',
@@ -769,6 +772,20 @@ const data = {
     'copy-image': 'Copy Image',
     'delete-image': 'Delete Image',
     'open-in-new-tab': 'Open in New Tab',
+  },
+  'index-status': {
+    'switch-repository-html': 'Please <a href="javascript:void(0)" data-command="switch-repository">Switch to the repository [<strong>%s</strong>]</a> to use this feature.',
+    'enable-indexing-html': 'Please <a href="javascript:void(0)" data-command="enable-indexing">enable indexing for the repository [<strong>%s</strong>]</a> to use this feature.',
+    'indexing': 'Indexing...',
+    'indexed': 'Indexed',
+  },
+  'view-links': {
+    'links': 'Links',
+    'back-links': 'Back Links',
+    'no-result': 'No Result',
+    'links-in': 'Links in "%s"',
+    'back-links-for': 'Back Links for "%s"',
+    're-index': 'Re-index',
   },
 }
 
