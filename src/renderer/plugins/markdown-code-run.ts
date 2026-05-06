@@ -259,12 +259,37 @@ const RunPlugin = (md: Markdown) => {
   md.renderer.rules.fence = (tokens, idx, options, env: RenderEnv, slf) => {
     const token = tokens[idx]
 
-    const code = token.content.trim()
-    const firstLine = code.split(/\n/)[0].trim()
+    let code = token.content.trim()
+    let firstLine = code.split(/\n/)[0].trim()
+    if (!firstLine.includes('--run--')) {
+      if (['bash', 'shell', 'sh', 'python', 'py'].indexOf(token.info) !== -1) {
+        firstLine = '# --run--'
+        code = firstLine + '\n' + code
+      } else if (token.info === 'bat') {
+        firstLine = 'REM --run--'
+        code = firstLine + '\n' + code
+      } else if (['php', 'node'].indexOf(token.info) !== -1) {
+        firstLine = '// --run--'
+        code = firstLine + '\n' + code
+      } else if (['javascript', 'js'].indexOf(token.info) !== -1) {
+        if (!firstLine.includes('// --')) {
+          firstLine = '// --run--'
+          code = firstLine + '\n' + code
+        }
+      } else if (token.info === 'c') {
+        firstLine = '// --run-- gcc $tmpFile.c -o $tmpFile.out && $tmpFile.out'
+        code = firstLine + '\n' + code
+      } else if (token.info === 'c++') {
+        firstLine = '// --run-- g++ $tmpFile.c -o $tmpFile.out && $tmpFile.out'
+        code = firstLine + '\n' + code
+      } else if (token.info === 'java') {
+        firstLine = '// --run-- java $tmpFile.java'
+        code = firstLine + '\n' + code
+      }
+    }
     if (!firstLine.includes('--run--') || !token.info || env.safeMode) {
       return temp(tokens, idx, options, env, slf)
     }
-
     const codeNode: VNode = temp(tokens, idx, options, env, slf) as any
 
     if (codeNode && Array.isArray(codeNode.children)) {
