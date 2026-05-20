@@ -534,6 +534,19 @@ export default {
       updateTitle()
     }
 
+    function handleEditorFocusOut (e: FocusEvent) {
+      if (dragState) {
+        return
+      }
+
+      const relatedTarget = e.relatedTarget as Node | null
+      if (relatedTarget && getEditorDom()?.contains(relatedTarget)) {
+        return
+      }
+
+      hideFloatingEditor()
+    }
+
     function applyFloatingStyle () {
       const editorDom = getEditorDom()
       if (!editorDom) {
@@ -546,6 +559,7 @@ export default {
 
       editorDom.classList.add('floating-editor-active')
       editorDom.addEventListener('wheel', stopWheelBubble)
+      editorDom.addEventListener('focusout', handleEditorFocusOut)
     }
 
     function restoreEditorStyle () {
@@ -557,6 +571,7 @@ export default {
       editorDom.classList.remove('floating-editor-active')
       editorDom.setAttribute('style', savedStyle)
       editorDom.removeEventListener('wheel', stopWheelBubble)
+      editorDom.removeEventListener('focusout', handleEditorFocusOut)
       savedStyle = null
     }
 
@@ -701,6 +716,7 @@ export default {
 
       ctx.view.disableSyncScrollAwhile(() => {
         ctx.editor.highlightLine(range.lineEnd ? [range.line, range.lineEnd - 1] : range.line, true, 1000)
+        ctx.editor.getEditor().focus()
       }).catch(console.warn)
       return false
     }

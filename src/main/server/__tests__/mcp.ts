@@ -14,6 +14,11 @@ const mocks = vi.hoisted(() => ({
           getRawActions: vi.fn(),
           executeAction: vi.fn(),
         },
+        setting: {
+          showSettingPanel: vi.fn(),
+          getSchemaForMcp: vi.fn(),
+          getSettingsForMcp: vi.fn(),
+        },
       },
     },
   },
@@ -115,6 +120,9 @@ afterEach(() => {
   mocks.exportDocumentForMcp.mockReset()
   mocks.jsonRPCClient.call.ctx.action.getRawActions.mockReset()
   mocks.jsonRPCClient.call.ctx.action.executeAction.mockReset()
+  mocks.jsonRPCClient.call.ctx.setting.showSettingPanel.mockReset()
+  mocks.jsonRPCClient.call.ctx.setting.getSchemaForMcp.mockReset()
+  mocks.jsonRPCClient.call.ctx.setting.getSettingsForMcp.mockReset()
 })
 
 describe('MCP server request handling', () => {
@@ -153,6 +161,9 @@ describe('MCP server request handling', () => {
       'yn_get_markdown_features_doc',
       'yn_reload_main_window',
       'yn_export_document',
+      'yn_get_config_schema',
+      'yn_get_all_configs',
+      'yn_show_setting_panel',
     ])
 
     const callTool = server.handlers.get(CallToolRequestSchema)
@@ -205,6 +216,54 @@ describe('MCP server request handling', () => {
     mocks.exportDocumentForMcp.mockResolvedValue({ base64: 'ZGF0YQ==' })
     const exported = await callTool({ params: { name: 'yn_export_document', arguments: { repo: 'notes', path: 'a.md', options: { fromType: 'html', toType: 'html' } } } })
     expect(JSON.parse(exported.content[0].text)).toEqual({ success: true, result: { base64: 'ZGF0YQ==' } })
+  })
+
+  it('gets config schema, fetches all configs, and opens the setting panel', async () => {
+    const { server } = await initEnabledServer()
+    const callTool = server.handlers.get(CallToolRequestSchema)
+
+    mocks.jsonRPCClient.call.ctx.setting.getSchemaForMcp.mockResolvedValue({
+      properties: {
+        theme: {
+          type: 'string',
+          title: 'Theme',
+          defaultValue: 'system',
+          enum: ['system', 'dark', 'light'],
+        },
+      },
+    })
+    const schema = await callTool({ params: { name: 'yn_get_config_schema', arguments: { key: 'theme' } } })
+    expect(JSON.parse(schema.content[0].text)).toEqual({
+      success: true,
+      result: {
+        key: 'theme',
+        config: {
+          type: 'string',
+          title: 'Theme',
+          defaultValue: 'system',
+          enum: ['system', 'dark', 'light'],
+        },
+      },
+    })
+
+    mocks.jsonRPCClient.call.ctx.setting.getSettingsForMcp.mockResolvedValue({ theme: 'dark', readonly: true })
+    const allConfigs = await callTool({ params: { name: 'yn_get_all_configs', arguments: {} } })
+    expect(JSON.parse(allConfigs.content[0].text)).toEqual({
+      success: true,
+      result: { theme: 'dark', readonly: true },
+    })
+
+    const openPanel = await callTool({ params: { name: 'yn_show_setting_panel', arguments: { key: 'theme' } } })
+    expect(JSON.parse(openPanel.content[0].text)).toEqual({
+      success: true,
+      result: { key: 'theme' },
+    })
+    expect(mocks.jsonRPCClient.call.ctx.setting.showSettingPanel).toHaveBeenCalledWith('theme')
+
+    mocks.jsonRPCClient.call.ctx.setting.getSchemaForMcp.mockResolvedValue({ properties: {} })
+    const missing = await callTool({ params: { name: 'yn_get_config_schema', arguments: { key: 'missing' } } })
+    expect(missing.isError).toBe(true)
+    expect(JSON.parse(missing.content[0].text)).toEqual({ success: false, error: 'Unknown config key: missing' })
   })
 
   it('handles transport errors and unknown tools', async () => {

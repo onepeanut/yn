@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
   registeredHooks: [] as any[],
   showSetting: false,
   themeName: 'dark',
+  setTheme: vi.fn(),
 }))
 
 vi.mock('@fe/others/setting-schema', () => ({
@@ -63,6 +64,7 @@ vi.mock('@fe/services/i18n', () => ({
 
 vi.mock('../theme', () => ({
   getThemeName: () => mocks.themeName,
+  setTheme: mocks.setTheme,
 }))
 
 async function importSetting (initSettings?: any) {
@@ -79,6 +81,7 @@ beforeEach(() => {
   mocks.registeredHooks = []
   mocks.showSetting = false
   mocks.themeName = 'dark'
+  mocks.setTheme.mockReset()
   document.body.innerHTML = ''
   delete (window as any)._INIT_SETTINGS
 })
@@ -194,6 +197,24 @@ test('gets and sets individual settings without exposing mutable local state', a
 
   await setting.setSetting('readonly', true)
   expect(mocks.writtenSettings).toStrictEqual({ readonly: true })
+})
+
+test('provides MCP helpers for schema and refreshed settings', async () => {
+  const setting = await importSetting({ readonly: false })
+  mocks.fetchedSettings = { readonly: true }
+
+  const schema = await setting.getSchemaForMcp()
+  expect(schema.properties.readonly).toBeTruthy()
+  expect(mocks.hooks[0]).toStrictEqual({
+    name: 'SETTING_PANEL_BEFORE_SHOW',
+    payload: {},
+    options: { breakable: true },
+  })
+
+  mocks.hooks = []
+  const settings = await setting.getSettingsForMcp()
+  expect(settings.readonly).toBe(true)
+  expect(mocks.hooks[0]).toMatchObject({ name: 'SETTING_FETCHED' })
 })
 
 test('shows, locates, and hides setting panel', async () => {
